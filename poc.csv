@@ -1,0 +1,12 @@
+person_name,kind,start,end
+Alice,date,2022-01-01,
+Alice,date,2022-03-15,
+Alice,relationship,2021-07-17,2022-04-15
+Bob,date,2022-02-10,
+Bob,date,2022-04-20,
+Bob,relationship,2019-03-17,2019-08-15
+Charlie,date,2021-12-05,
+Charlie,relationship,2021-03-17,2023-04-15
+David,date,2022-05-08,
+David,relationship,2022-06-17,2023-01-15
+David,date,2022-07-20,
