@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt # Plotting
-import matplotlib.patches as patches # Background
+# import matplotlib.pyplot as plt # Plotting
+# import matplotlib.patches as patches # Background
 import datetime as dt # Obviously for time data
 
 with st.sidebar:
