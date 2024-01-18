@@ -5,6 +5,7 @@ import matplotlib.patches as patches # Background
 import seaborn as sns
 import datetime as dt # Obviously for time data
 from itertools import cycle
+from dodger import calculate_offsets
 import numpy as np
 
 with st.sidebar:
@@ -49,7 +50,7 @@ with tab2:
         df = pd.read_csv(uploaded_data_file)
     else:
         "Here is some example data:"
-        df = pd.read_csv("poc.csv")
+        df = pd.read_csv("maxim.csv")
 
     df.start = pd.to_datetime(df.start)
     df.end   = pd.to_datetime(df.end)
@@ -350,3 +351,7 @@ with tab1:
 
 
     st.pyplot(fig)
+
+    
+    st.write(calculate_offsets(filtered_df))
+    
