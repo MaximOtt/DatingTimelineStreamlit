@@ -123,11 +123,11 @@ with tab2:
 with tab3:
     # Default appearance settings
     global_settings = {
-        "year_font_size": 24,
+        "year_font_size": 20,
         "month_font_size": 16,
         "date_dot_size": 10,
-        "relationship_line_width": 10,
-        "fplus_line_width": 10,
+        "relationship_line_width": 4,
+        "fplus_line_width": 2,
     }
 
     "Here you can customize the general appearance of the graph."
@@ -184,10 +184,11 @@ with tab4:
         person_settings = pd.DataFrame(columns=['person_name','offset','color'])
         person_settings.person_name = colored_persons + ons
         person_settings.offset = np.random.randint(-10,11, size=len(person_settings))
-        kelly_upgrade = ['#e6194b', '#3cb44b', '#ffe119', '#4363d8', '#f58231', '#911eb4',
-                    '#46f0f0', '#f032e6', '#bcf60c', '#fabebe', '#008080', '#e6beff',
-                    '#9a6324', '#800000', '#aaffc3', '#808000', '#ffd8b1',
-                    '#000075', '#808080']
+        kelly_upgrade = [
+            '#e6194b', '#3cb44b', '#ffe119', '#4363d8', '#f58231', '#911eb4',
+            '#46f0f0', '#f032e6', '#bcf60c', '#fabebe', '#008080', '#e6beff',
+            '#9a6324', '#800000', '#aaffc3', '#808000', '#ffd8b1',
+            '#000075', '#808080']
         kelly = cycle(kelly_upgrade)
         person_settings.color = person_settings.color.apply(lambda x: next(kelly))
         
@@ -267,7 +268,15 @@ with tab1:
     ###############################################
     ### Enrich the data with offsets and colors ###
     ###############################################
+    # Merge colors and offsets
     plot_df = df.merge(person_settings, on="person_name", how="left")
+    # Set line width
+    plot_df["line_width"] = global_settings["fplus_line_width"]
+    plot_df.loc[(plot_df['stage'] == 'Relationship'), 'line_width'] = global_settings["relationship_line_width"]
+    # Set line style
+    plot_df["line_style"] = 'solid'
+    plot_df.loc[(plot_df['stage'] == 'FWB'), 'line_style'] = 'dashed'
+
 
     #########################
     ### Plotting the data ###
@@ -294,8 +303,8 @@ with tab1:
                     [row.start_day , row.end_day],
                     [year + row.offset*offset_step, year + row.offset*offset_step],
                     solid_capstyle='round',
-                    # linestyle=row.lines_tyle,
-                    # lw = row.line_width,
+                    linestyle=row.line_style,
+                    lw = row.line_width,
                     color = row.color
                 )
             elif year == row.start_year:
@@ -303,8 +312,8 @@ with tab1:
                     [row.start_day, right],
                     [year + row.offset*offset_step, year + row.offset*offset_step],
                     solid_capstyle='round',
-                    # linestyle=row.lines_tyle,
-                    # lw = row.line_width,
+                    linestyle=row.line_style,
+                    lw = row.line_width,
                     color = row.color
                 )
             elif year == row.end_year:
@@ -312,8 +321,8 @@ with tab1:
                     [left , row.end_day],
                     [year + row.offset*offset_step, year + row.offset*offset_step],
                     solid_capstyle='round',
-                    # linestyle=row.lines_tyle,
-                    # lw = row.line_width,
+                    linestyle=row.line_style,
+                    lw = row.line_width,
                     color = row.color
                 )
             else:
@@ -321,8 +330,8 @@ with tab1:
                     [left , right],
                     [year + row.offset*offset_step, year + row.offset*offset_step],
                     solid_capstyle='round',
-                    # linestyle=row.lines_tyle,
-                    # lw = row.line_width,
+                    linestyle=row.line_style,
+                    lw = row.line_width,
                     color = row.color
                 )
 
