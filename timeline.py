@@ -49,7 +49,7 @@ with tab2:
         df = pd.read_csv(uploaded_data_file)
     else:
         "Here is some example data:"
-        df = pd.read_csv("maxim.csv")
+        df = pd.read_csv("poc.csv")
 
     df.start = pd.to_datetime(df.start)
     df.end   = pd.to_datetime(df.end)
