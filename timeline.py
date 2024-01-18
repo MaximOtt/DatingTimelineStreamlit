@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt # Plotting
 import matplotlib.patches as patches # Background
+import seaborn as sns
 import datetime as dt # Obviously for time data
 
 with st.sidebar:
@@ -57,8 +58,8 @@ with tab2:
 with tab3:
     # Default appearance settings
     global_settings = {
-        "year_font_size": 16,
-        "month_font_size": 16,
+        "year_font_size": 30,
+        "month_font_size": 20,
         "date_dot_size": 10,
         "relationship_line_width": 10,
         "fplus_line_width": 10,
@@ -73,7 +74,6 @@ with tab3:
 with tab4:
     "Here you can customize how each person is shown."
 
-    uploaded_settings_file = st.file_uploader("Choose a CSV file with your settings", accept_multiple_files=False)
 
     st.markdown(
         """
@@ -83,15 +83,23 @@ with tab4:
         * Size: Relative size of the date dots and width of the f+/relationship lines with respect to others
         """
     )
-    if uploaded_settings_file is not None:
-        df = pd.read_csv(uploaded_settings_file)
-        st.write(df)
-    else:
-        st.write(df)
 
-    "Here are all the circumstances you have entered."
+    st.markdown(
+        """
+        Here are all the circumstances you have described. For each of them you can set the following:
+        * Color: Use one of the named colors: https://matplotlib.org/stable/gallery/color/named_colors.html
+        """
+    )
 
-    "Here are all the special activities you have participated in."
+
+    st.markdown(
+        """
+        Here are all the special activities. For each of them you can set the following:
+        * Symbol: Allow upload?
+        * Size: Relative size of the with respect to the date dots
+        """
+    )
+
 
 
 ###############
@@ -106,6 +114,8 @@ with tab1:
     #############################
     ### Setting up the graph ####
     #############################
+    sns.set(style="whitegrid")
+
     # Find or set extreme values
     min_year = min(min(df.start),min(df.end)).year
     max_year = max(max(df.start),max(df.end)).year
