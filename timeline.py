@@ -180,17 +180,22 @@ with tab4:
         ons = sorted(list(ons))
         ons
 
-    person_settings = pd.DataFrame(columns=['person_name','offset','color'])
-    person_settings.person_name = colored_persons + ons
-    person_settings.offset = np.random.randint(-10,11, size=len(person_settings))
-    kelly_upgrade = ['#e6194b', '#3cb44b', '#ffe119', '#4363d8', '#f58231', '#911eb4',
-                 '#46f0f0', '#f032e6', '#bcf60c', '#fabebe', '#008080', '#e6beff',
-                 '#9a6324', '#800000', '#aaffc3', '#808000', '#ffd8b1',
-                 '#000075', '#808080']
-    kelly = cycle(kelly_upgrade)
-    person_settings.color = person_settings.color.apply(lambda x: next(kelly))
+    if 'person_settings' not in st.session_state:
+        person_settings = pd.DataFrame(columns=['person_name','offset','color'])
+        person_settings.person_name = colored_persons + ons
+        person_settings.offset = np.random.randint(-10,11, size=len(person_settings))
+        kelly_upgrade = ['#e6194b', '#3cb44b', '#ffe119', '#4363d8', '#f58231', '#911eb4',
+                    '#46f0f0', '#f032e6', '#bcf60c', '#fabebe', '#008080', '#e6beff',
+                    '#9a6324', '#800000', '#aaffc3', '#808000', '#ffd8b1',
+                    '#000075', '#808080']
+        kelly = cycle(kelly_upgrade)
+        person_settings.color = person_settings.color.apply(lambda x: next(kelly))
+        
+        person_settings.loc[(person_settings['person_name'].isin(ons)), 'color'] = 'grey'
     
-    person_settings.loc[(person_settings['person_name'].isin(ons)), 'color'] = 'grey'
+        st.session_state.person_settings = person_settings
+    else:
+        person_settings = st.session_state.person_settings
 
     settings_column_config = {
         "person_name": "Name",
