@@ -58,7 +58,6 @@ def calculate_offsets(df):
     date_people = df[
         ~(df.person_name.isin(rel_people.person_name))
     ].groupby('person_name').start.agg('min').reset_index().sort_values(by='start') # We need all individual dates
-    st.write(date_people)
     date_people['offset'] = 0
 
     for index, row in date_people.iterrows():

@@ -50,7 +50,7 @@ with tab2:
         df = pd.read_csv(uploaded_data_file)
     else:
         "Here is some example data:"
-        df = pd.read_csv("maxim.csv")
+        df = pd.read_csv("maxim_people.csv")
 
     df.start = pd.to_datetime(df.start)
     df.end   = pd.to_datetime(df.end)
@@ -114,12 +114,96 @@ with tab2:
             step=1,
         ),
     }
-    df = st.data_editor(df, use_container_width=True, column_config=column_config_dict)
+    df = st.data_editor(df, use_container_width=True, column_config=column_config_dict, num_rows='dynamic')
 
     df.person_name  = df.person_name.astype(str)
     df.kind  = df.kind.astype(str)
     df.start = pd.to_datetime(df.start)
     df.end =   pd.to_datetime(df.end)
+
+
+
+
+
+    uploaded_circumstances_file = st.file_uploader("Choose a CSV file defining some special circumstances", accept_multiple_files=False)
+
+    if uploaded_circumstances_file is not None:
+        "This is your data:"
+        circumstances = pd.read_csv(uploaded_circumstances_file)
+    else:
+        "Here is some example data:"
+        circumstances = pd.read_csv("maxim_circumstances.csv")
+
+    circumstances.start = pd.to_datetime(circumstances.start)
+    circumstances.end   = pd.to_datetime(circumstances.end)
+
+    if 'circumstances' not in st.session_state:
+        st.session_state.circumstances = circumstances
+    else:
+        circumstances = st.session_state.circumstances
+
+    circumstances_column_config = {
+        "situation": st.column_config.TextColumn(label="Situation", required=True),
+        "start": st.column_config.DateColumn(
+            "From/At",
+            help="""
+            Beginning of whatever happened.
+            """,
+            min_value=dt.date(1900, 1, 1),
+            max_value=dt.date(2030, 1, 1),
+            format="DD.MM.YYYY",
+            step=1,
+            required=True
+        ),
+        "end": st.column_config.DateColumn(
+            "To",
+            help="""
+            End of whatever happened.
+            """,
+            min_value=dt.date(1900, 1, 1),
+            max_value=dt.date(2030, 1, 1),
+            format="DD.MM.YYYY",
+            step=1,
+            required=True
+        ),
+    }
+    circumstances = st.data_editor(circumstances, use_container_width=True, column_config=circumstances_column_config, num_rows='dynamic')
+
+
+    uploaded_specials_file = st.file_uploader("Choose a CSV file with your 'special' activities", accept_multiple_files=False)
+
+    if uploaded_specials_file is not None:
+        "This is your data:"
+        specials = pd.read_csv(uploaded_specials_file)
+    else:
+        "Here is some example data:"
+        specials = pd.read_csv("maxim_specials.csv")
+
+    specials.start = pd.to_datetime(specials.start)
+
+    if 'specials' not in st.session_state:
+        st.session_state.specials = specials
+    else:
+        specials = st.session_state.specials
+
+    specials_column_config = {
+        "special": st.column_config.TextColumn(label="Label", required=True),
+        "kind": st.column_config.TextColumn(label="Category", help="Usually FFM or MMF thresomes woud go here, but you can define your own categories", required=True),
+        "start": st.column_config.DateColumn(
+            "Date",
+            help="""
+            Day of whatever happened.
+            """,
+            min_value=dt.date(1900, 1, 1),
+            max_value=dt.date(2030, 1, 1),
+            format="DD.MM.YYYY",
+            step=1,
+            required=True
+        ),
+    }
+    specials = st.data_editor(specials, use_container_width=True, column_config=specials_column_config, num_rows='dynamic')
+
+
 
 with tab3:
     # Default appearance settings
@@ -183,10 +267,8 @@ with tab4:
 
     with st.expander("Some or all entries for these people will not be shown"):
         removed_people = sorted(removed_people)
-        removed_people
     with st.expander("These people will be colored grey"):
         ons = sorted(list(ons))
-        ons
 
     if 'person_settings' not in st.session_state:
         person_settings = pd.DataFrame(columns=['person_name','color'])
@@ -196,7 +278,7 @@ with tab4:
             how = 'left',
             on = 'person_name'
         )
-        person_settings
+        
         person_settings.offset = person_settings.offset.fillna(0)
 
         kelly_upgrade = [
@@ -227,7 +309,6 @@ with tab4:
         * Color: Use one of the named colors: https://matplotlib.org/stable/gallery/color/named_colors.html
         """
     )
-
 
     st.markdown(
         """
@@ -382,7 +463,3 @@ with tab1:
             zorder = -99)
 
     st.pyplot(fig)
-
-    
-    st.write(calculate_offsets(filtered_df))
-    
