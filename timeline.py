@@ -129,13 +129,20 @@ with tab3:
         "date_dot_size": 10,
         "relationship_line_width": 4,
         "fplus_line_width": 2,
+        "dodge_step_size": 0.15,
+        "dodge_dates_days": 5
     }
 
     "Here you can customize the general appearance of the graph."
     for key, value in global_settings.items():
-        global_settings[key] = st.number_input(
-            f'`{key}`', step = 1, min_value= 1, 
-            value = global_settings[key])
+        if isinstance(global_settings[key],int):
+            global_settings[key] = st.number_input(
+                f'`{key}`', step = 1, min_value= 1, 
+                value = global_settings[key])
+        elif isinstance(global_settings[key],float):
+            global_settings[key] = st.number_input(
+                f'`{key}`', step = 0.01, min_value= 0.0, 
+                value = global_settings[key])
 
 with tab4:
     "Here you can customize how each person is shown."
@@ -182,9 +189,16 @@ with tab4:
         ons
 
     if 'person_settings' not in st.session_state:
-        person_settings = pd.DataFrame(columns=['person_name','offset','color'])
+        person_settings = pd.DataFrame(columns=['person_name','color'])
         person_settings.person_name = colored_persons + ons
-        person_settings.offset = np.random.randint(-10,11, size=len(person_settings))
+        person_settings = person_settings.merge(
+            calculate_offsets(filtered_df)[['person_name', 'offset']],
+            how = 'left',
+            on = 'person_name'
+        )
+        person_settings
+        person_settings.offset = person_settings.offset.fillna(0)
+
         kelly_upgrade = [
             '#e6194b', '#3cb44b', '#ffe119', '#4363d8', '#f58231', '#911eb4',
             '#46f0f0', '#f032e6', '#bcf60c', '#fabebe', '#008080', '#e6beff',
@@ -247,6 +261,11 @@ with tab1:
 
     # Create figure
     fig, ax = plt.subplots(figsize=(12, 15))
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['bottom'].set_visible(False)
+    ax.spines['left'].set_visible(False)
+    ax.grid(False)
 
     # Set limits
     plt.xlim([-5, 370])
@@ -277,12 +296,13 @@ with tab1:
     # Set line style
     plot_df["line_style"] = 'solid'
     plot_df.loc[(plot_df['stage'] == 'FWB'), 'line_style'] = 'dashed'
-
+    
+    
 
     #########################
     ### Plotting the data ###
     #########################
-    offset_step = 0.05
+    offset_step = 0.15
 
     ### Long-term arrangements are plotted as lines
     # Filter and calculate helper columns
@@ -306,7 +326,8 @@ with tab1:
                     solid_capstyle='round',
                     linestyle=row.line_style,
                     lw = row.line_width,
-                    color = row.color
+                    color = row.color,
+                    zorder = 0
                 )
             elif year == row.start_year:
                 ax.plot(
@@ -315,7 +336,8 @@ with tab1:
                     solid_capstyle='round',
                     linestyle=row.line_style,
                     lw = row.line_width,
-                    color = row.color
+                    color = row.color,
+                    zorder = 0
                 )
             elif year == row.end_year:
                 ax.plot(
@@ -324,7 +346,8 @@ with tab1:
                     solid_capstyle='round',
                     linestyle=row.line_style,
                     lw = row.line_width,
-                    color = row.color
+                    color = row.color,
+                    zorder = 0
                 )
             else:
                 ax.plot(
@@ -333,7 +356,8 @@ with tab1:
                     solid_capstyle='round',
                     linestyle=row.line_style,
                     lw = row.line_width,
-                    color = row.color
+                    color = row.color,
+                    zorder = 0
                 )
 
 
@@ -346,9 +370,16 @@ with tab1:
     for index, row in dates.iterrows():
         ax.scatter(
             row.date_day, row.date_year + row.offset*offset_step,
-            color = row.color
+            color = row.color,
+            zorder = 1
         )
 
+    # Add alternating patches in the background
+    for year in range(min_year, max_year +1 ):
+        ax.fill_between(
+            range(0,366), year-0.45, year+0.45,
+            color = '#e1e1e1' if year % 2 == 0 else '#ebebeb',
+            zorder = -99)
 
     st.pyplot(fig)
 
