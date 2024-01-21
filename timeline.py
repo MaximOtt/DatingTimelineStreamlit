@@ -373,7 +373,7 @@ with tab1:
     ### Enrich the data with offsets and colors ###
     ###############################################
     # Merge colors and offsets
-    plot_df = df.merge(person_settings, on="person_name", how="left")
+    plot_df = filtered_df.merge(person_settings, on="person_name", how="left")
     # Set line width
     plot_df["line_width"] = global_settings["fplus_line_width"]
     plot_df.loc[(plot_df['stage'] == 'Relationship'), 'line_width'] = global_settings["relationship_line_width"]
