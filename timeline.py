@@ -272,7 +272,7 @@ with tab4:
         ons = sorted(list(ons))
 
     if 'person_settings' not in st.session_state:
-        person_settings = pd.DataFrame(columns=['person_name','color'])
+        person_settings = pd.DataFrame(columns=['person_name','facecolor', 'edgecolor'])
         person_settings.person_name = colored_persons + ons
         person_settings = person_settings.merge(
             calculate_offsets(filtered_df, global_settings["dodge_dates_days"])[['person_name', 'offset']],
@@ -288,9 +288,11 @@ with tab4:
             '#9a6324', '#800000', '#aaffc3', '#808000', '#ffd8b1',
             '#000075', '#808080']
         kelly = cycle(kelly_upgrade)
-        person_settings.color = person_settings.color.apply(lambda x: next(kelly))
-        
-        person_settings.loc[(person_settings['person_name'].isin(ons)), 'color'] = 'grey'
+        person_settings.facecolor = person_settings.facecolor.apply(lambda x: next(kelly))
+        person_settings.edgecolor = person_settings.facecolor
+
+        person_settings.loc[(person_settings['person_name'].isin(ons)), 'facecolor'] = 'grey'
+        person_settings.loc[(person_settings['person_name'].isin(ons)), 'edgecolor'] = 'grey'
     
         st.session_state.person_settings = person_settings
     else:
@@ -378,6 +380,10 @@ with tab1:
     # Set line style
     plot_df["line_style"] = 'solid'
     plot_df.loc[(plot_df['stage'] == 'FWB'), 'line_style'] = 'dashed'
+    # Set markers for dates
+    plot_df["marker"] = "o"
+    plot_df.loc[(plot_df['stage'] == 'No action'), 'marker'] = '.'
+    plot_df.loc[(plot_df['stage'] == 'Kiss'), 'facecolor'] = 'None'
     
     
 
@@ -408,7 +414,7 @@ with tab1:
                     solid_capstyle='round',
                     linestyle=row.line_style,
                     lw = row.line_width,
-                    color = row.color,
+                    color = row.facecolor,
                     zorder = 0
                 )
             elif year == row.start_year:
@@ -418,7 +424,7 @@ with tab1:
                     solid_capstyle='round',
                     linestyle=row.line_style,
                     lw = row.line_width,
-                    color = row.color,
+                    color = row.facecolor,
                     zorder = 0
                 )
             elif year == row.end_year:
@@ -428,7 +434,7 @@ with tab1:
                     solid_capstyle='round',
                     linestyle=row.line_style,
                     lw = row.line_width,
-                    color = row.color,
+                    color = row.facecolor,
                     zorder = 0
                 )
             else:
@@ -438,7 +444,7 @@ with tab1:
                     solid_capstyle='round',
                     linestyle=row.line_style,
                     lw = row.line_width,
-                    color = row.color,
+                    color = row.facecolor,
                     zorder = 0
                 )
 
@@ -452,7 +458,9 @@ with tab1:
     for index, row in dates.iterrows():
         ax.scatter(
             row.date_day, row.date_year + row.offset*offset_step,
-            color = row.color,
+            facecolor = row.facecolor,
+            edgecolor = row.edgecolor,
+            marker = row.marker,
             zorder = 1
         )
 
