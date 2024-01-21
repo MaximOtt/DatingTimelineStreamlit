@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt # Plotting
 import matplotlib.patches as patches # Background
+import matplotlib.patheffects as pe
 import seaborn as sns
 import datetime as dt # Obviously for time data
 from itertools import cycle
@@ -24,14 +25,14 @@ with st.sidebar:
     st.header("2: Customize the appearance")
     """
     Sometimes many things happen at once. To tell the individual people apart, all of them will be assigned colors automatically
-    and randomly moved around a little. in the 'Customize' tab you have the option to define how certain people should be displayed.
+    and moved around a little. In the 'Customize' tab you then have the option to redefine how certain people should be displayed.
     This is highly recommended if you want to create a visually appealing graph.
     """
 
     st.header("3: Download the results")
     """
     Once you are happy with the results, download the graph as .png or .svg. The latter format can be edited with, e.g., Inkscape to add labels.
-    You can also download your data and your settings file if you plan on coming back and extending the graph,
+    You should also download your data and your settings file if you plan on coming back and extending the graph,
     as I don't know how to securely save the data. 
     """
 
@@ -213,7 +214,7 @@ with tab3:
         "date_dot_size": 10,
         "relationship_line_width": 4,
         "fplus_line_width": 2,
-        "dodge_step_size": 0.15,
+        "dodge_step_size": 0.08,
         "dodge_dates_days": 5
     }
 
@@ -274,7 +275,7 @@ with tab4:
         person_settings = pd.DataFrame(columns=['person_name','color'])
         person_settings.person_name = colored_persons + ons
         person_settings = person_settings.merge(
-            calculate_offsets(filtered_df)[['person_name', 'offset']],
+            calculate_offsets(filtered_df, global_settings["dodge_dates_days"])[['person_name', 'offset']],
             how = 'left',
             on = 'person_name'
         )
@@ -383,7 +384,7 @@ with tab1:
     #########################
     ### Plotting the data ###
     #########################
-    offset_step = 0.15
+    offset_step = global_settings["dodge_step_size"]
 
     ### Long-term arrangements are plotted as lines
     # Filter and calculate helper columns
@@ -454,6 +455,30 @@ with tab1:
             color = row.color,
             zorder = 1
         )
+
+    # Add background patches for the defined situations
+    for index, row in circumstances.iterrows():
+        for year in range(row.start.year, row.end.year +1 ):
+            if row.start.year == row.end.year:
+                ax.fill_between(
+                    range(row.start.dayofyear,row.end.dayofyear), year-0.45, year+0.45,
+                    color = row.color,
+                    zorder = -10)
+            elif year == row.start.year:
+                ax.fill_between(
+                    range(row.start.dayofyear,365), year-0.45, year+0.45,
+                    color = row.color,
+                    zorder = -10)
+            elif year == row.end.year:
+                ax.fill_between(
+                    range(0,row.end.dayofyear), year-0.45, year+0.45,
+                    color = row.color,
+                    zorder = -10)
+            else:
+                ax.fill_between(
+                    range(0,365), year-0.45, year+0.45,
+                    color = row.color,
+                    zorder = -10)
 
     # Add alternating patches in the background
     for year in range(min_year, max_year +1 ):
