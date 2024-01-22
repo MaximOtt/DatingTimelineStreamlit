@@ -306,12 +306,8 @@ with tab4:
 
     person_settings = st.data_editor(person_settings, use_container_width=True, column_config=settings_column_config)
 
-    st.markdown(
-        """
-        Here are all the circumstances you have described. For each of them you can set the following:
-        * Color: Use one of the named colors: https://matplotlib.org/stable/gallery/color/named_colors.html
-        """
-    )
+
+
 
     st.markdown(
         """
@@ -320,6 +316,44 @@ with tab4:
         * Size: Relative size of the with respect to the date dots
         """
     )
+
+    ################
+    ### Specials ###
+    ################
+    st.markdown(
+        """
+        Here are all the circumstances you have described. For each of them you can set the following:
+        * Color: Use one of the named colors: https://matplotlib.org/stable/gallery/color/named_colors.html
+        """
+    )
+
+   
+    if 'specials_summary' not in st.specials_summary:
+        specials_summary = specials.groupby('kind').size().reset_index(name='count')
+        
+        specials_summary['symbol'] = ""
+        specials_summary['offset'] = 0
+
+        symbols = [
+            '#e6194b', '#3cb44b', '#ffe119', '#4363d8', '#f58231', '#911eb4',
+            '#46f0f0', '#f032e6', '#bcf60c', '#fabebe', '#008080', '#e6beff',
+            '#9a6324', '#800000', '#aaffc3', '#808000', '#ffd8b1',
+            '#000075', '#808080']
+        symbol = cycle(symbols)
+        specials_summary.symbol = specials_summary.symbol.apply(lambda x: next(symbol))
+        specials_summary.edgecolor = "None"
+
+        st.session_state.specials_summary = specials_summary
+    else:
+        specials_summary = st.session_state.specials_summary
+
+    settings_column_config = {
+        "person_name": "Name",
+        "offset": st.column_config.NumberColumn(label="Offset", help="Leave empty to use a random value.", step=1),
+        "color": st.column_config.TextColumn(label="Color", help="Leave empty to pick automatically.")
+    }
+
+    person_settings = st.data_editor(person_settings, use_container_width=True, column_config=settings_column_config)
 
 
 
@@ -462,6 +496,16 @@ with tab1:
             edgecolor = row.edgecolor,
             marker = row.marker,
             zorder = 1
+        )
+
+    # Add symbols for the special activities
+    for index, row in specials.iterrows():
+        ax.scatter(
+            row.start.dayofyear, row.start.year ,# + row.offset*offset_step,
+            # facecolor = row.facecolor,
+            # edgecolor = row.edgecolor,
+            # marker = row.marker,
+            zorder = 3
         )
 
     # Add background patches for the defined situations
