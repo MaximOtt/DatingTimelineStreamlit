@@ -544,7 +544,7 @@ with tab1:
             elif year == row.start.year:
                 # Draw two lines so that the round caps dont' extend outside the area
                 ax.plot(
-                    [row.start.dayofyear, (365-row.start.dayofyear)/2],
+                    [row.start.dayofyear, (365+row.start.dayofyear)/2],
                     [year + row.offset*offset_step, year + row.offset*offset_step],
                     solid_capstyle='round',
                     linestyle=row.line_style,
@@ -553,7 +553,7 @@ with tab1:
                     zorder = 0
                 )
                 ax.plot(
-                    [(365-row.start.dayofyear)/2, 365],
+                    [(365+row.start.dayofyear)/2, 365],
                     [year + row.offset*offset_step, year + row.offset*offset_step],
                     solid_capstyle='butt',
                     linestyle=row.line_style,
