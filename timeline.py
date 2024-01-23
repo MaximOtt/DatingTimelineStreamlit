@@ -39,12 +39,12 @@ bg_colors = [
     'xkcd:very pale green',
     'xkcd:egg shell',
     'xkcd:pale peach',
-    'xkcd: light sky blue'
+    'xkcd:light sky blue'
 ]
 bg_color = cycle(bg_colors)
 
 color_list = [
-    'dull purple', 'xkcd:umber', 'xkcd:golden yellow', 'xkcd:pale teal', 'xkcd:pinky red', # 5
+    'xkcd:dull purple', 'xkcd:umber', 'xkcd:golden yellow', 'xkcd:pale teal', 'xkcd:pinky red', # 5
     'xkcd:bronze', 'xkcd:bluish', 'xkcd:vermillion', 'xkcd:sickly green', 'xkcd:cranberry', # 10
     'xkcd:barney', 'xkcd:watermelon', 'xkcd:easter purple', 'xkcd:darkish green', 'xkcd:tomato', # 15
     'xkcd:greeny blue', 'xkcd:pastel red', 'xkcd:topaz', 'xkcd:burple', 'xkcd:maroon', # 20 
