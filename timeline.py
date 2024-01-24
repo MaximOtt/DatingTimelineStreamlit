@@ -120,23 +120,28 @@ with tab2:
     else:
         "Here is some example data:"
 
+    if "initialize_data" not in st.session_state:
+        st.session_state["initialize_data"] = True
+
     ###############
     ### Persons ###
     ###############
-    if uploaded_people_df is not None:
-        df = uploaded_people_df
-    else:
-        if clear_example_data:
-            df = pd.read_csv("maxim_people.csv", nrows=0)
+    if st.session_state["initialize_data"]:
+        if uploaded_people_df is not None:
+            df = uploaded_people_df
         else:
-            df = pd.read_csv("maxim_people.csv")
+            if clear_example_data:
+                df = pd.read_csv("maxim_people.csv", nrows=0)
+            else:
+                df = pd.read_csv("maxim_people.csv")
+        st.session_state["initialize_data"] = False
 
-    df.start = pd.to_datetime(df.start)
-    df.end   = pd.to_datetime(df.end)    
-    df.person_name  = df.person_name.astype(str)
-    df.kind  = df.kind.astype(str)
-    df.start = pd.to_datetime(df.start)
-    df.end =   pd.to_datetime(df.end)
+        df.start = pd.to_datetime(df.start)
+        df.end   = pd.to_datetime(df.end)    
+        df.person_name  = df.person_name.astype(str)
+        df.kind  = df.kind.astype(str)
+        df.start = pd.to_datetime(df.start)
+        df.end =   pd.to_datetime(df.end)
 
     column_config_dict = {
         "person_name": "Name",
@@ -198,12 +203,12 @@ with tab2:
         ),
     }
 
-
-    df = st.data_editor(df, use_container_width=True, column_config=column_config_dict, num_rows='dynamic')
     if "df" not in st.session_state:
         st.session_state["df"] = df
     else:
         df = st.session_state["df"]
+    df = st.data_editor(df, use_container_width=True, column_config=column_config_dict, num_rows='dynamic')
+
 
     ################
     ### Specials ###
