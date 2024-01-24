@@ -9,7 +9,7 @@ import seaborn as sns
 import datetime as dt # Obviously for time data
 from itertools import cycle
 from dodger import calculate_offsets
-import numpy as np
+import zipfile
 
 ######################################
 ### Prepare some things in advance ###
@@ -80,28 +80,63 @@ with st.sidebar:
     as I don't know how to securely save the data. 
     """
 
-with st.expander("Upload/Download area"):
-    "Upload everything at once"
-    "Download everything at once"
-    "Download graph"
+with st.expander("Upload everything at once"):
+    uploaded_people = st.file_uploader("Choose a file containing data about all relationships, dates, etc.", accept_multiple_files=False)
+    if uploaded_people is not None:
+        uploaded_people_df = pd.read_csv(uploaded_people)
+        st.write(uploaded_people_df)
+    else:
+        uploaded_people_df = None
+
+    uploaded_specials = st.file_uploader("Choose a file containing data about all 'special activities' you took part in, like ,e.g., threesomes.", accept_multiple_files=False)
+    if uploaded_specials is not None:
+        uploaded_specials_df = pd.read_csv(uploaded_specials)
+        st.write(uploaded_specials_df)
+    else:
+        uploaded_specials_df = None
+
+    uploaded_circumstances = st.file_uploader("Choose a file containing data about all relevant circumstances, like being abroad.", accept_multiple_files=False)
+    if uploaded_circumstances is not None:
+        uploaded_circumstances_df = pd.read_csv(uploaded_circumstances)
+        st.write(uploaded_circumstances_df)
+    else:
+        uploaded_circumstances_df = None
+
 
 tab1, tab2, tab3, tab4 = st.tabs(["Timeline", "Data", "Settings", "Customize"])
 
 with tab2:
+    st.write(
+        "Please use the 'Upload' expander at the top of this page to upload your data, or clear the example data by clicking on the button below and enter everything manually."
+    )
+    st.warning(
+        "Make sure to download your data regularly, as refreshing the page might delete all your progress!"
+    )
+
+    clear_example_data = st.button('Clear example data')
+    
+    if clear_example_data:
+        "This is your data:"
+    else:
+        "Here is some example data:"
+
     ###############
     ### Persons ###
     ###############
-    uploaded_data_file = st.file_uploader("Choose a CSV file with your data", accept_multiple_files=False)
-
-    if uploaded_data_file is not None:
-        "This is your data:"
-        df = pd.read_csv(uploaded_data_file)
+    if uploaded_people_df is not None:
+        df = uploaded_people_df
     else:
-        "Here is some example data:"
-        df = pd.read_csv("maxim_people.csv")
+        if clear_example_data:
+            df = pd.read_csv("maxim_people.csv", nrows=0)
+        else:
+            df = pd.read_csv("maxim_people.csv")
 
     df.start = pd.to_datetime(df.start)
-    df.end   = pd.to_datetime(df.end)
+    df.end   = pd.to_datetime(df.end)    
+    df.person_name  = df.person_name.astype(str)
+    df.kind  = df.kind.astype(str)
+    df.start = pd.to_datetime(df.start)
+    df.end =   pd.to_datetime(df.end)
 
     column_config_dict = {
         "person_name": "Name",
@@ -162,31 +197,31 @@ with tab2:
             step=1,
         ),
     }
-    df = st.data_editor(df, use_container_width=True, column_config=column_config_dict, num_rows='dynamic')
 
-    df.person_name  = df.person_name.astype(str)
-    df.kind  = df.kind.astype(str)
-    df.start = pd.to_datetime(df.start)
-    df.end =   pd.to_datetime(df.end)
+
+    df = st.data_editor(df, use_container_width=True, column_config=column_config_dict, num_rows='dynamic')
+    if "df" not in st.session_state:
+        st.session_state["df"] = df
+    else:
+        df = st.session_state["df"]
 
     ################
     ### Specials ###
     ################
-    uploaded_specials_file = st.file_uploader("Choose a CSV file with your 'special' activities", accept_multiple_files=False)
-
-    if uploaded_specials_file is not None:
-        "This is your data:"
-        specials = pd.read_csv(uploaded_specials_file)
+    if uploaded_specials_df is not None:
+        specials = uploaded_specials_df
     else:
-        "Here is some example data:"
-        specials = pd.read_csv("maxim_specials.csv")
+        if clear_example_data:
+            specials = pd.read_csv("maxim_specials.csv", nrows=0)
+        else:
+            specials = pd.read_csv("maxim_specials.csv")
 
     specials.start = pd.to_datetime(specials.start)
 
-    if 'specials' not in st.session_state:
-        st.session_state.specials = specials
-    else:
-        specials = st.session_state.specials
+    # if 'specials' not in st.session_state:
+    #     st.session_state.specials = specials
+    # else:
+    #     specials = st.session_state.specials
 
     specials_column_config = {
         "special": st.column_config.TextColumn(label="Label", help="Brief note to act as unique ID", required=True),
@@ -209,22 +244,23 @@ with tab2:
     #####################
     ### Circumstances ###
     #####################
-    uploaded_circumstances_file = st.file_uploader("Choose a CSV file defining some special circumstances", accept_multiple_files=False)
+    # uploaded_circumstances_file = st.file_uploader("Choose a CSV file defining some special circumstances or copy/paste into the table", accept_multiple_files=False)
 
-    if uploaded_circumstances_file is not None:
-        "This is your data:"
-        circumstances = pd.read_csv(uploaded_circumstances_file)
+    if uploaded_circumstances_df is not None:
+        circumstances = uploaded_circumstances_df
     else:
-        "Here is some example data:"
-        circumstances = pd.read_csv("maxim_circumstances.csv")
+        if clear_example_data:
+            circumstances = pd.read_csv("maxim_circumstances.csv", nrows=0)
+        else:
+            circumstances = pd.read_csv("maxim_circumstances.csv")
 
     circumstances.start = pd.to_datetime(circumstances.start)
     circumstances.end   = pd.to_datetime(circumstances.end)
 
-    if 'circumstances' not in st.session_state:
-        st.session_state.circumstances = circumstances
-    else:
-        circumstances = st.session_state.circumstances
+    # if 'circumstances' not in st.session_state:
+    #     st.session_state.circumstances = circumstances
+    # else:
+    #     circumstances = st.session_state.circumstances
 
     circumstances_column_config = {
         "situation": st.column_config.TextColumn(label="Situation", required=True),
@@ -252,7 +288,6 @@ with tab2:
         ),
     }
     circumstances = st.data_editor(circumstances, use_container_width=True, column_config=circumstances_column_config, num_rows='dynamic')
-
 
 
 with tab3:
@@ -348,6 +383,10 @@ with tab4:
             st.session_state.person_settings = person_settings
         else:
             person_settings = st.session_state.person_settings
+            person_settings = person_settings[person_settings.person_name.isin(filtered_df.person_name.unique())]
+
+            
+
 
         person_settings_column_config = {
             "person_name": st.column_config.TextColumn(label="Name", disabled = True),
@@ -397,7 +436,10 @@ with tab4:
             # "symbol_url": st.column_config.TextColumn(label="Symbol", width="small")
         }
 
-        specials_summary = st.data_editor(specials_summary, use_container_width=True, column_config=specials_summary_settings_column_config)
+        specials_summary = st.data_editor(
+            specials_summary, use_container_width=True, 
+            column_config=specials_summary_settings_column_config,
+            hide_index = False)
     
         if 'specials_offset' not in st.session_state:
             specials_offset = specials[['special','kind','start','participants']]
@@ -412,7 +454,10 @@ with tab4:
         specials_offset_settings_column_config = specials_column_config
         specials_offset_settings_column_config['offset'] = st.column_config.NumberColumn(label="Offset", help="Modify if needed.", step = 1)
 
-        specials_offset = st.data_editor(specials_offset, use_container_width=True, column_config=specials_offset_settings_column_config)
+        specials_offset = st.data_editor(
+            specials_offset, use_container_width=True, 
+            column_config=specials_offset_settings_column_config,
+            hide_index = False)
 
     ##############################
     ### Circumstances Settings ###
@@ -420,8 +465,7 @@ with tab4:
     with st.container(border=True):
         st.markdown(
             """
-            Here are all the circumstances (living abroad, etc.) you have described. For each of them you can set the following:
-            * Color: Use one of the named colors: https://matplotlib.org/stable/gallery/color/named_colors.html
+            Here are all the circumstances (living abroad, etc.) you have described. For each of them you can also change the color as before.
             """
         )
 
@@ -442,7 +486,10 @@ with tab4:
             "color": st.column_config.TextColumn(label="Color", help="You can change the color to any named matplotlib color or use the hex code."),
         }
 
-        circumstances_summary = st.data_editor(circumstances_summary, use_container_width=True, column_config=circumstances_summary_column_config)
+        circumstances_summary = st.data_editor(
+            circumstances_summary, use_container_width=True, 
+            column_config=circumstances_summary_column_config,
+            hide_index = False)
 
 ###############
 #### GRAPH ####
@@ -457,6 +504,10 @@ with tab1:
     # Find or set extreme values
     min_year = df.start.min().year
     max_year = max(df.start.max(),df.end.max()).year
+    if pd.isna(min_year):
+        min_year=2000
+        max_year=2001
+
     left =  0
     right = 365
 
@@ -629,11 +680,11 @@ with tab1:
     # an annotation
     for x0, y0, key in zip(symbol_x, symbol_y, symbol_row_key):
         # Get the width and height of the image
-        image_extent = symbol_boxes[key].get_extent(renderer)
+        image_extent = symbol_boxes[key].get_tightbbox(renderer)
 
         # Adjust coordinates to place the center of the image at (x0, y0)
-        adjusted_x0 = x0 - (image_extent[2] - image_extent[0]) / 2
-        adjusted_y0 = y0 - (image_extent[3] - image_extent[1]) / 2
+        adjusted_x0 = x0 - (image_extent.x1 - image_extent.x0) / 2
+        adjusted_y0 = y0 - (image_extent.y1 - image_extent.y0) / 2
 
         ab = AnnotationBbox(symbol_boxes[key], (x0, y0), frameon=False, zorder=6)
         ax.add_artist(ab)
@@ -657,14 +708,14 @@ with tab1:
                     zorder = -9))
             elif year == row.end.year:
                 ax.add_patch(patches.Rectangle(
-                    (0,year-0.45),
+                    (1,year-0.45),
                     row.end.dayofyear,bg_width,
                     edgecolor='None',facecolor=row.color,
                     zorder = -9))
 
             else:
                 ax.add_patch(patches.Rectangle(
-                    (0,year-0.45),
+                    (1,year-0.45),
                     365,bg_width,
                     edgecolor='None',facecolor=row.color,
                     zorder = -9))
@@ -681,10 +732,27 @@ with tab1:
     st.pyplot(fig)
     plt.savefig("mydatingtimeline.svg")
 
+
+with st.expander("Download everything"): 
+    with zipfile.ZipFile("mydatingtimeline.zip", "w") as zf:
+        with zf.open(f"people.csv", "w") as buffer:
+            plot_df.to_csv(buffer,index=False)
+        with zf.open(f"specials.csv", "w") as buffer:
+            specials_df.to_csv(buffer,index=False)
+        with zf.open(f"circumstances.csv", "w") as buffer:
+            circumstances_df.to_csv(buffer, index=False)
+
     with open("mydatingtimeline.svg", "rb") as file:
         btn = st.download_button(
                 label="Download as SVG",
                 data=file,
                 file_name="mydatingtimeline.svg",
+                mime="image/svg"
+            )
+    with open("mydatingtimeline.zip", "rb") as file:
+        btn = st.download_button(
+                label="Download all data as ZIP",
+                data=file,
+                file_name="mydatingtimeline.zip",
                 mime="image/svg"
             )
