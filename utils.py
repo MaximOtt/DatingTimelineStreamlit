@@ -1,7 +1,57 @@
 import streamlit as st
 import pandas as pd
-# def calculate_offsets(df, specials, closeness_limit): # Removed for now
-def calculate_offsets(df, closeness_limit):
+from itertools import cycle
+
+
+def apply_filter():
+    if st.session_state['filter_choice'] == "All":
+        st.session_state['filtered_people'] = st.session_state['people']
+        st.session_state['removed_people'] = [] 
+    elif st.session_state['filter_choice'] == "Kiss":
+        st.session_state['filtered_people'] = st.session_state['people'][st.session_state['people'].stage != "No action"]
+        st.session_state['removed_people'] = list(st.session_state['people'][st.session_state['people'].stage == "No action"].name.unique())
+    elif st.session_state['filter_choice'] == "Sex":
+        st.session_state['filtered_people'] = st.session_state['people'][
+            ~((st.session_state['people'].stage == "Kiss") | (st.session_state['people'].stage == "No action"))
+        ] # This keeps the longterm stuff
+        st.session_state['removed_people'] = list(st.session_state['people'][
+            (st.session_state['people'].stage == "Kiss") | (st.session_state['people'].stage == "No action")
+        ].name.unique())
+
+
+
+
+def calculate_people_summary():
+    st.session_state['people_to_color'] = list(
+        st.session_state['filtered_people'][st.session_state['filtered_people'].kind == "Longterm"].name.unique()
+    )
+    st.session_state['people_to_color'].extend(list(
+        st.session_state['filtered_people'][st.session_state['filtered_people'].kind == "Date"].groupby("name").filter(lambda x: len(x) > 1).name.unique()
+    ))
+    st.session_state['ons'] = set(st.session_state['filtered_people'].name) - set(st.session_state['people_to_color'])
+
+    st.session_state['people_settings'] = pd.DataFrame(columns=['name','facecolor', 'edgecolor'])
+    st.session_state['people_settings'].name = list(set(st.session_state['people_to_color']) | st.session_state['ons'])
+
+    color = cycle(st.session_state['color_list'])
+    if len(st.session_state['people_settings']) >0:
+        st.session_state['people_settings'] = st.session_state['people_settings'].merge(
+            calculate_offsets(st.session_state['filtered_people'])[['name', 'offset']],
+            how = 'left',
+            on = 'name'
+        )
+    
+        st.session_state['people_settings'].offset = st.session_state['people_settings'].offset.fillna(0)
+
+        st.session_state['people_settings'].facecolor = st.session_state['people_settings'].facecolor.apply(lambda x: next(color))
+        st.session_state['people_settings'].edgecolor = st.session_state['people_settings'].facecolor
+
+        st.session_state['people_settings'].loc[(st.session_state['people_settings']['name'].isin(st.session_state['ons'])), 'facecolor'] = 'grey'
+        st.session_state['people_settings'].loc[(st.session_state['people_settings']['name'].isin(st.session_state['ons'])), 'edgecolor'] = 'grey'
+
+
+
+def calculate_offsets(df):
     # Split the df to plot by the number of known participants and treat the cases separately
     # No known participants:
     # > Offset must be dodged like a regular date
@@ -32,6 +82,7 @@ def calculate_offsets(df, closeness_limit):
     # st.write(specials_with_multiple)
 
     print('Running calculate_offsets()')
+    closeness_limit = st.session_state['global_settings']['dodge_dates_days']
 
     # Check relationships first
     rel_people = df[df.kind=="Longterm"].groupby("name").agg({

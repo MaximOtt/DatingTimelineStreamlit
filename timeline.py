@@ -8,22 +8,30 @@ from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 import seaborn as sns
 import datetime as dt # Obviously for time data
 from itertools import cycle
-from dodger import calculate_offsets
+# from dodger import calculate_offsets
+from utils import apply_filter, calculate_offsets, calculate_people_summary
 import zipfile
 
+if 'app_run_counter' not in st.session_state:
+    st.session_state['app_run_counter'] = 1
+else:
+    st.session_state['app_run_counter'] += 1
+print('#########################################################################')
+print('### App Run Counter:', st.session_state['app_run_counter'])
 ######################################
 ### Prepare some things in advance ###
 ######################################
 # Default appearance settings
-global_settings = {
-    "year_font_size": 20,
-    "month_font_size": 16,
-    "date_dot_size": 10,
-    "relationship_line_width": 4,
-    "fplus_line_width": 2,
-    "dodge_step_size": 0.12,
-    "dodge_dates_days": 5
-}
+if 'global_settings' not in st.session_state:
+    st.session_state['global_settings'] = {
+        "year_font_size": 20,
+        "month_font_size": 16,
+        "date_dot_size": 10,
+        "relationship_line_width": 4,
+        "fplus_line_width": 2,
+        "dodge_step_size": 0.12,
+        "dodge_dates_days": 5
+    }
 
 # Read symbol images
 symbols = {image_file: plt.imread(image_file) for image_file in glob.glob('symbols/*.png')}
@@ -32,7 +40,7 @@ symbol_keys = [key for key, image in symbols.items()]
 symbol_key = cycle(symbol_keys)
 
 # Set color cycles
-bg_colors = [
+st.session_state['bg_colors'] = [
     'xkcd:light pink',
     'xkcd:pale',
     'xkcd:pale blue',
@@ -41,9 +49,9 @@ bg_colors = [
     'xkcd:pale peach',
     'xkcd:light sky blue'
 ]
-bg_color = cycle(bg_colors)
+bg_color = cycle(st.session_state['bg_colors'])
 
-color_list = [
+st.session_state['color_list'] = [
     'xkcd:dull purple', 'xkcd:umber', 'xkcd:golden yellow', 'xkcd:pale teal', 'xkcd:pinky red', # 5
     'xkcd:bronze', 'xkcd:bluish', 'xkcd:vermillion', 'xkcd:sickly green', 'xkcd:cranberry', # 10
     'xkcd:barney', 'xkcd:watermelon', 'xkcd:easter purple', 'xkcd:darkish green', 'xkcd:tomato', # 15
@@ -51,7 +59,7 @@ color_list = [
     'xkcd:olive', 'xkcd:forest green', 'xkcd:periwinkle', 'xkcd:lime', 'xkcd:lilac', # 25
     'xkcd:royal purple', 'xkcd:light orange', 'xkcd:cerulean', 'xkcd:kelly green', 'xkcd:puke green', # 30
 ]
-color = cycle(color_list)
+color = cycle(st.session_state['color_list'])
 
 with st.sidebar:
     st.title("Your Dating Timeline")
@@ -105,6 +113,29 @@ with st.expander("Upload everything at once"):
 
 tab1, tab2, tab3, tab4 = st.tabs(["Timeline", "Data", "Settings", "Customize"])
 
+# tab1: Timeline
+# tab2: Data Upload/Input/Edit/View
+# tab3: General Plot Settings
+# tab4: Data Summary and Customization
+
+############################
+### General Settings Tab ###
+############################
+with tab3:
+    "Here you can customize the general appearance of the graph."
+    for key, value in st.session_state['global_settings'].items():
+        if isinstance(st.session_state['global_settings'][key],int):
+            st.session_state['global_settings'][key] = st.number_input(
+                f'`{key}`', step = 1, min_value= 1, 
+                value = st.session_state['global_settings'][key])
+        elif isinstance(st.session_state['global_settings'][key],float):
+            st.session_state['global_settings'][key] = st.number_input(
+                f'`{key}`', step = 0.01, min_value= 0.0, 
+                value = st.session_state['global_settings'][key])
+
+################
+### Data Tab ###
+################
 with tab2:
     st.write(
         "Please use the 'Upload' expander at the top of this page to upload your data, or clear the example data by clicking on the button below and enter everything manually."
@@ -113,38 +144,102 @@ with tab2:
         "Make sure to download your data regularly, as refreshing the page might delete all your progress!"
     )
 
-    clear_example_data = st.button('Clear example data')
-    
-    if clear_example_data:
-        "This is your data:"
-    else:
-        "Here is some example data:"
 
-    if "initialize_data" not in st.session_state:
-        st.session_state["initialize_data"] = True
-
+    print('Start of Data tab')
     ###############
     ### Persons ###
     ###############
-    if st.session_state["initialize_data"]:
-        if uploaded_people_df is not None:
-            df = uploaded_people_df
-        else:
-            if clear_example_data:
-                df = pd.read_csv("maxim_people.csv", nrows=0)
+    # When the page is rendered for the first time, we want to show example data and obviously not delete anything
+    if 'reinitialize' not in st.session_state:
+        print('reinitialize was not in state')
+        st.session_state["reinitialize"] = True
+    
+
+    col1, col2 = st.columns(2)
+    with col1:
+        button_a = st.button('Show example data', use_container_width=True)
+    with col2:
+        button_b = st.button('Delete everything', use_container_width=True)
+    
+    if button_a or button_b:
+        print('A button was True, reinitialize is set to True')
+        st.session_state["reinitialize"] = True
+
+    # Dataframe initialization should happen only when certain conditions are met
+    # Otherwise, the data frame should be loaded from sessionstate
+    
+    if st.session_state['reinitialize']:
+        if button_a:
+            st.session_state['people'] =        pd.read_csv("maxim_people.csv")
+            st.session_state['specials'] =      pd.read_csv("maxim_specials.csv")
+            st.session_state['circumstances'] = pd.read_csv("maxim_circumstances.csv")
+        elif button_b:
+            st.session_state['people'] =        pd.read_csv("maxim_people.csv", nrows=0)
+            st.session_state['specials'] =      pd.read_csv("maxim_specials.csv", nrows=0)
+            st.session_state['circumstances'] = pd.read_csv("maxim_circumstances.csv", nrows=0)
+        elif uploaded_people is not None:
+            st.session_state['people'] = uploaded_people_df
+            if uploaded_specials is not None:
+                st.session_state['specials'] = uploaded_specials_df
             else:
-                df = pd.read_csv("maxim_people.csv")
-        st.session_state["initialize_data"] = False
+                st.session_state['specials'] = pd.read_csv("maxim_specials.csv", nrows=0)
+            if uploaded_circumstances is not None:
+                st.session_state['circumstances'] = uploaded_circumstances_df
+            else:
+                st.session_state['circumstances'] = pd.read_csv("maxim_circumstances.csv", nrows=0)
+        else:
+            st.session_state['people'] =        pd.read_csv("maxim_people.csv")
+            st.session_state['specials'] =      pd.read_csv("maxim_specials.csv")
+            st.session_state['circumstances'] = pd.read_csv("maxim_circumstances.csv")
+        
+        st.session_state['people'].start = pd.to_datetime(st.session_state['people'].start)
+        st.session_state['people'].end   = pd.to_datetime(st.session_state['people'].end)    
+        st.session_state['people'].name  = st.session_state['people'].name.astype(str)
+        st.session_state['people'].kind  = st.session_state['people'].kind.astype(str)
+        st.session_state['people'].start = pd.to_datetime(st.session_state['people'].start)
+        st.session_state['people'].end =   pd.to_datetime(st.session_state['people'].end)
+        st.session_state['specials'].start = pd.to_datetime(st.session_state['specials'].start)
+        st.session_state['circumstances'].start = pd.to_datetime(st.session_state['circumstances'].start)
+        st.session_state['circumstances'].end   = pd.to_datetime(st.session_state['circumstances'].end)
+        # st.session_state['people']       = people
+        # st.session_state['specials']     = specials
+        # st.session_state['circumstances'] = circumstances
+        st.session_state['reinitialize'] = False
+        button_a = False
+        button_b = False
+    # else:
+    #     people          = st.session_state['people']
+    #     specials        = st.session_state['specials']
+    #     circumstances   = st.session_state['circumstances']
 
-        df.start = pd.to_datetime(df.start)
-        df.end   = pd.to_datetime(df.end)    
-        df.person_name  = df.person_name.astype(str)
-        df.kind  = df.kind.astype(str)
-        df.start = pd.to_datetime(df.start)
-        df.end =   pd.to_datetime(df.end)
 
-    column_config_dict = {
-        "person_name": "Name",
+with tab4:
+    "Here you can customize how each person is shown."
+
+    ##################
+    ### Set filter ###
+    ##################
+    st.markdown(
+        """
+        First, please select the level of detail for the dates (longterm arrangements are always plotted).
+        Please note: Changing the filter will currently erase all your inputs.
+        """
+    )
+
+    st.session_state['filter_choice'] = st.radio(
+        "What kind of dates would you like to see in the graph?",
+        ["All", "Kiss", "Sex"],
+        captions = ["Show all dates.", "Show only dates where there was at least a kiss.", "Show only dates where you had sex."])
+    
+    apply_filter()
+
+with tab2:
+    ###########################
+    ### Display data frames ###        
+    ###########################
+    st.markdown('#### Individials')
+    people_column_config_dict = {
+        "name": "Name",
         "kind": st.column_config.SelectboxColumn(
             "Category",
             help="""
@@ -202,32 +297,13 @@ with tab2:
             step=1,
         ),
     }
+    st.session_state['people'] = st.data_editor(
+        st.session_state['people'], column_config=people_column_config_dict,
+        on_change=calculate_people_summary,
+        use_container_width=True, num_rows='dynamic'
+    )
 
-    if "df" not in st.session_state:
-        st.session_state["df"] = df
-    else:
-        df = st.session_state["df"]
-    df = st.data_editor(df, use_container_width=True, column_config=column_config_dict, num_rows='dynamic')
-
-
-    ################
-    ### Specials ###
-    ################
-    if uploaded_specials_df is not None:
-        specials = uploaded_specials_df
-    else:
-        if clear_example_data:
-            specials = pd.read_csv("maxim_specials.csv", nrows=0)
-        else:
-            specials = pd.read_csv("maxim_specials.csv")
-
-    specials.start = pd.to_datetime(specials.start)
-
-    # if 'specials' not in st.session_state:
-    #     st.session_state.specials = specials
-    # else:
-    #     specials = st.session_state.specials
-
+    st.markdown('#### Special activities')
     specials_column_config = {
         "special": st.column_config.TextColumn(label="Label", help="Brief note to act as unique ID", required=True),
         "kind": st.column_config.TextColumn(label="Category", help="Usually FFM or MMF thresomes would go here, but you can define your own categories", required=True),
@@ -244,29 +320,9 @@ with tab2:
         ),
         'participants': st.column_config.TextColumn(label="Participants", help="Participants separated by semicolons. Some fancy plotting options based on this might get added later.", required=False),
     }
-    specials = st.data_editor(specials, use_container_width=True, column_config=specials_column_config, num_rows='dynamic')
+    st.session_state['specials'] = st.data_editor(st.session_state['specials'], use_container_width=True, column_config=specials_column_config, num_rows='dynamic')
 
-    #####################
-    ### Circumstances ###
-    #####################
-    # uploaded_circumstances_file = st.file_uploader("Choose a CSV file defining some special circumstances or copy/paste into the table", accept_multiple_files=False)
-
-    if uploaded_circumstances_df is not None:
-        circumstances = uploaded_circumstances_df
-    else:
-        if clear_example_data:
-            circumstances = pd.read_csv("maxim_circumstances.csv", nrows=0)
-        else:
-            circumstances = pd.read_csv("maxim_circumstances.csv")
-
-    circumstances.start = pd.to_datetime(circumstances.start)
-    circumstances.end   = pd.to_datetime(circumstances.end)
-
-    # if 'circumstances' not in st.session_state:
-    #     st.session_state.circumstances = circumstances
-    # else:
-    #     circumstances = st.session_state.circumstances
-
+    st.markdown('#### Circumstances')
     circumstances_column_config = {
         "situation": st.column_config.TextColumn(label="Situation", required=True),
         "start": st.column_config.DateColumn(
@@ -292,54 +348,15 @@ with tab2:
             required=True
         ),
     }
-    circumstances = st.data_editor(circumstances, use_container_width=True, column_config=circumstances_column_config, num_rows='dynamic')
+    st.session_state['circumstances'] = st.data_editor(st.session_state['circumstances'], use_container_width=True, column_config=circumstances_column_config, num_rows='dynamic')
 
-
-with tab3:
-    "Here you can customize the general appearance of the graph."
-    for key, value in global_settings.items():
-        if isinstance(global_settings[key],int):
-            global_settings[key] = st.number_input(
-                f'`{key}`', step = 1, min_value= 1, 
-                value = global_settings[key])
-        elif isinstance(global_settings[key],float):
-            global_settings[key] = st.number_input(
-                f'`{key}`', step = 0.01, min_value= 0.0, 
-                value = global_settings[key])
 
 with tab4:
-    "Here you can customize how each person is shown."
-
-    ##################
-    ### Set filter ###
-    ##################
-    st.markdown(
-        """
-        First, please select the level of detail for the dates (longterm arrangements are always plotted).
-        Please note: Changing the filter will currently erase all your inputs.
-        """
-    )
-
-    show_dates = st.radio(
-        "What kind of dates would you like to see in the graph?",
-        ["All", "Kiss", "Sex"],
-        captions = ["Show all dates.", "Show only dates where there was at least a kiss.", "Show only dates where you had sex."])
-    
-    if show_dates == "All":
-        filtered_df = df
-        removed_people = [] 
-    elif show_dates == "Kiss":
-        filtered_df = df[df.stage != "No action"]
-        removed_people = list(df[df.stage == "No action"].person_name.unique())
-    elif show_dates == "Sex":
-        filtered_df = df[~((df.stage == "Kiss") | (df.stage == "No action"))] # This keeps the longterm stuff
-        removed_people = list(df[(df.stage == "Kiss") | (df.stage == "No action")].person_name.unique())
-    
     with st.expander("Some or all entries for these people will not be shown"):
-        if len(removed_people)==0:
+        if len(st.session_state['removed_people'])==0:
             st.write('No one here')
         else:
-            for person in removed_people:
+            for person in st.session_state['removed_people']:
                 st.write(person)
         
 
@@ -356,10 +373,6 @@ with tab4:
             """
         )
 
-        colored_persons = list(filtered_df[filtered_df.kind == "Longterm"].person_name.unique())
-        colored_persons.extend(list(filtered_df[filtered_df.kind == "Date"].groupby("person_name").filter(lambda x: len(x) > 1).person_name.unique()))
-        ons = set(filtered_df.person_name) - set(colored_persons)
-
         # with st.expander("These people will be colored grey"):
         #     if len(ons)==0:
         #         st.write('No one here')
@@ -368,41 +381,44 @@ with tab4:
         #             st.write(person)
 
 
-        if 'person_settings' not in st.session_state:
-            person_settings = pd.DataFrame(columns=['person_name','facecolor', 'edgecolor'])
-            person_settings.person_name = list(set(colored_persons) | ons)
-            person_settings = person_settings.merge(
-                calculate_offsets(filtered_df, global_settings["dodge_dates_days"])[['person_name', 'offset']],
-                how = 'left',
-                on = 'person_name'
-            )
+        # if 'person_settings' not in st.session_state:
+        #     person_settings = recalculate_people_summary(filtered_df, st.session_state['global_settings'], color)
+        #     st.session_state['people_settings'] = recalculate_people_summary(filtered_df, st.session_state['global_settings'], color)
+        #     # person_settings = pd.DataFrame(columns=['name','facecolor', 'edgecolor'])
+        #     # person_settings.name = list(set(colored_persons) | ons)
+        #     # if len(person_settings) >0:
+        #     #     person_settings = person_settings.merge(
+        #     #         calculate_offsets(filtered_df, st.session_state['global_settings']["dodge_dates_days"])[['name', 'offset']],
+        #     #         how = 'left',
+        #     #         on = 'name'
+        #     #     )
             
-            person_settings.offset = person_settings.offset.fillna(0)
+        #     #     person_settings.offset = person_settings.offset.fillna(0)
 
-            person_settings.facecolor = person_settings.facecolor.apply(lambda x: next(color))
-            person_settings.edgecolor = person_settings.facecolor
+        #     #     person_settings.facecolor = person_settings.facecolor.apply(lambda x: next(color))
+        #     #     person_settings.edgecolor = person_settings.facecolor
 
-            person_settings.loc[(person_settings['person_name'].isin(ons)), 'facecolor'] = 'grey'
-            person_settings.loc[(person_settings['person_name'].isin(ons)), 'edgecolor'] = 'grey'
+        #     #     person_settings.loc[(person_settings['name'].isin(ons)), 'facecolor'] = 'grey'
+        #     #     person_settings.loc[(person_settings['name'].isin(ons)), 'edgecolor'] = 'grey'
         
-            st.session_state.person_settings = person_settings
-        else:
-            person_settings = st.session_state.person_settings
-            person_settings = person_settings[person_settings.person_name.isin(filtered_df.person_name.unique())]
+        #     # st.session_state.person_settings = person_settings
+        # else:
+        #     person_settings = st.session_state.person_settings
+        #     person_settings = person_settings[person_settings.name.isin(filtered_df.name.unique())]
 
             
+        calculate_people_summary()
 
-
-        person_settings_column_config = {
-            "person_name": st.column_config.TextColumn(label="Name", disabled = True),
+        people_settings_column_config = {
+            "name": st.column_config.TextColumn(label="Name", disabled = True),
             "offset": st.column_config.NumberColumn(label="Offset", help="Leave empty to use a random value.", step=1),
             "facecolor": st.column_config.TextColumn(label="Color", help="Leave empty to pick automatically.")
         }
 
-        person_settings = st.data_editor(
-            person_settings, use_container_width=True,
-            column_config=person_settings_column_config,
-            column_order = ['person_name', 'facecolor', 'offset']
+        st.session_state['people_settings'] = st.data_editor(
+            st.session_state['people_settings'], use_container_width=True,
+            column_config = people_settings_column_config,
+            column_order = ['name', 'facecolor', 'offset']
         )
 
 
@@ -419,7 +435,7 @@ with tab4:
 
     
         if 'specials_summary' not in st.session_state:
-            specials_summary = specials.groupby('kind').size().reset_index(name='count').sort_values(by=['count', 'kind'], ascending = False).reset_index(drop=True)
+            specials_summary = st.session_state['specials'].groupby('kind').size().reset_index(name='count').sort_values(by=['count', 'kind'], ascending = False).reset_index(drop=True)
             
             specials_summary['symbol_key'] = ""
             # specials_summary['symbol_url'] = ""
@@ -447,7 +463,7 @@ with tab4:
             hide_index = False)
     
         if 'specials_offset' not in st.session_state:
-            specials_offset = specials[['special','kind','start','participants']]
+            specials_offset = st.session_state['specials'][['special','kind','start','participants']]
             
             specials_offset['offset'] = 0
             # specials_summary['symbol_url'] = ""
@@ -475,7 +491,7 @@ with tab4:
         )
 
         if 'circumstances_summary' not in st.session_state:
-            circumstances_summary = circumstances.groupby('situation').size().reset_index(name='count').reset_index(drop=True)
+            circumstances_summary = st.session_state['circumstances'].groupby('situation').size().reset_index(name='count').reset_index(drop=True)
             
             circumstances_summary['color'] = ""
 
@@ -507,8 +523,8 @@ with tab1:
     sns.set_theme(style="darkgrid", rc={'axes.facecolor':'#171717', 'figure.facecolor':'#171717'})
 
     # Find or set extreme values
-    min_year = df.start.min().year
-    max_year = max(df.start.max(),df.end.max()).year
+    min_year = st.session_state['filtered_people'].start.min().year
+    max_year = max(st.session_state['filtered_people'].start.max(),st.session_state['filtered_people'].end.max()).year
     if pd.isna(min_year):
         min_year=2000
         max_year=2001
@@ -529,7 +545,7 @@ with tab1:
     plt.ylim([min_year-0.5, max_year+0.5])
 
     # Set year ticks (labels are fine automatically)
-    plt.yticks(range(min_year,max_year+1), fontsize = global_settings["year_font_size"], color = 'white')
+    plt.yticks(range(min_year,max_year+1), fontsize = st.session_state['global_settings']["year_font_size"], color = 'white')
     # Set month ticks and labels
     first_of_month = [dt.datetime(1,n,1).timetuple().tm_yday for n in range(1,13)]
     plt.xticks(first_of_month + [365],) # Set tick locations at the first of each month and end of year (ignoring leap years)
@@ -537,7 +553,7 @@ with tab1:
     middle_of_month = [day + 15 for day in first_of_month] # Good enough
     ax.set_xticks(middle_of_month, minor=True) # Set minor ticks locations between the month 
     ax.tick_params(axis='x', which='minor', size=0) # Hide them from view
-    ax.set_xticklabels(['Jan','Feb','Mar','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'], minor=True, fontsize = global_settings["month_font_size"], color = 'white')
+    ax.set_xticklabels(['Jan','Feb','Mar','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'], minor=True, fontsize = st.session_state['global_settings']["month_font_size"], color = 'white')
 
     # Years should go from top to bottom
     ax.invert_yaxis()
@@ -550,36 +566,36 @@ with tab1:
     ###############################################
     ### Individual people
     # Merge colors and offsets
-    plot_df = filtered_df.merge(person_settings, on="person_name", how="left")
+    people_plot_df = st.session_state['filtered_people'].merge(st.session_state['people_settings'], on="name", how="left")
     # Set line width
-    plot_df["line_width"] = global_settings["fplus_line_width"]
-    plot_df.loc[(plot_df['stage'] == 'Relationship'), 'line_width'] = global_settings["relationship_line_width"]
+    people_plot_df["line_width"] = st.session_state['global_settings']["fplus_line_width"]
+    people_plot_df.loc[(people_plot_df['stage'] == 'Relationship'), 'line_width'] = st.session_state['global_settings']["relationship_line_width"]
     # Set line style
-    plot_df["line_style"] = 'solid'
-    plot_df.loc[(plot_df['stage'] == 'FWB'), 'line_style'] = 'dashed'
+    people_plot_df["line_style"] = 'solid'
+    people_plot_df.loc[(people_plot_df['stage'] == 'FWB'), 'line_style'] = 'dashed'
     # Set markers for dates
-    plot_df["marker"] = "o"
-    plot_df.loc[(plot_df['stage'] == 'No action'), 'marker'] = '.'
-    plot_df.loc[(plot_df['stage'] == 'Kiss'), 'facecolor'] = 'None'
+    people_plot_df["marker"] = "o"
+    people_plot_df.loc[(people_plot_df['stage'] == 'No action'), 'marker'] = '.'
+    people_plot_df.loc[(people_plot_df['stage'] == 'Kiss'), 'facecolor'] = 'None'
     
     ### Specials
     # Merge symbols and alocate columns
-    specials_df = specials.merge(specials_summary, on = "kind", how = "left")
-    specials_df = specials_df.merge(specials_offset[['special', 'offset']], on = "special", how = "left")
-    specials_df['facecolor'] = 'grey'
-    specials_df['edgecolor'] = specials_df.facecolor
-    specials_df['size'] = 9
+    specials_plot_df = st.session_state['specials'].merge(specials_summary, on = "kind", how = "left")
+    specials_plot_df = specials_plot_df.merge(specials_offset[['special', 'offset']], on = "special", how = "left")
+    specials_plot_df['facecolor'] = 'grey'
+    specials_plot_df['edgecolor'] = specials_plot_df.facecolor
+    specials_plot_df['size'] = 9
 
     # Circumstances
-    circumstances_df = circumstances.merge(circumstances_summary, on = "situation", how = "left")
+    circumstances_plot_df = st.session_state['circumstances'].merge(circumstances_summary, on = "situation", how = "left")
 
     #########################
     ### Plotting the data ###
     #########################
-    offset_step = global_settings["dodge_step_size"]
+    offset_step = st.session_state['global_settings']["dodge_step_size"]
 
     ### Long-term arrangements are plotted as lines
-    lt = plot_df.query("kind == 'Longterm'").copy()
+    lt = people_plot_df.query("kind == 'Longterm'").copy()
     # There are 4 options for arrangements:
     #   - Started and ended in the same year (simplest case)
     #   - Started in a certain year, but continued past the end of it
@@ -651,7 +667,7 @@ with tab1:
 
     ### Dates are plotted as dots
     # Filter and calculate helper columns
-    dates = plot_df.query("kind == 'Date'").copy()
+    dates = people_plot_df.query("kind == 'Date'").copy()
     for index, row in dates.iterrows():
         ax.scatter(
             row.start.dayofyear, row.start.year + row.offset*offset_step,
@@ -677,7 +693,7 @@ with tab1:
     symbol_x=[]
     symbol_y=[]
     symbol_row_key = []
-    for index, row in specials_df.iterrows():
+    for index, row in specials_plot_df.iterrows():
         symbol_x.append(row.start.dayofyear)
         symbol_y.append(row.start.year)
         symbol_row_key.append(row.symbol_key)
@@ -697,7 +713,7 @@ with tab1:
 
     # Add background patches for the defined situations
     bg_width = 0.9 # in years
-    for index, row in circumstances_df.iterrows():
+    for index, row in circumstances_plot_df.iterrows():
         for year in range(row.start.year, row.end.year +1 ):
             if row.start.year == row.end.year:
                 ax.add_patch(patches.Rectangle(
@@ -741,11 +757,11 @@ with tab1:
 with st.expander("Download everything"): 
     with zipfile.ZipFile("mydatingtimeline.zip", "w") as zf:
         with zf.open(f"people.csv", "w") as buffer:
-            plot_df.to_csv(buffer,index=False)
+            people_plot_df.to_csv(buffer,index=False)
         with zf.open(f"specials.csv", "w") as buffer:
-            specials_df.to_csv(buffer,index=False)
+            specials_plot_df.to_csv(buffer,index=False)
         with zf.open(f"circumstances.csv", "w") as buffer:
-            circumstances_df.to_csv(buffer, index=False)
+            circumstances_plot_df.to_csv(buffer, index=False)
 
     with open("mydatingtimeline.svg", "rb") as file:
         btn = st.download_button(
