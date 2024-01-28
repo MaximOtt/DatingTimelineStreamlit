@@ -373,46 +373,13 @@ with tab4:
             """
         )
 
-        # with st.expander("These people will be colored grey"):
-        #     if len(ons)==0:
-        #         st.write('No one here')
-        #     else:
-        #         for person in ons:
-        #             st.write(person)
-
-
-        # if 'person_settings' not in st.session_state:
-        #     person_settings = recalculate_people_summary(filtered_df, st.session_state['global_settings'], color)
-        #     st.session_state['people_settings'] = recalculate_people_summary(filtered_df, st.session_state['global_settings'], color)
-        #     # person_settings = pd.DataFrame(columns=['name','facecolor', 'edgecolor'])
-        #     # person_settings.name = list(set(colored_persons) | ons)
-        #     # if len(person_settings) >0:
-        #     #     person_settings = person_settings.merge(
-        #     #         calculate_offsets(filtered_df, st.session_state['global_settings']["dodge_dates_days"])[['name', 'offset']],
-        #     #         how = 'left',
-        #     #         on = 'name'
-        #     #     )
-            
-        #     #     person_settings.offset = person_settings.offset.fillna(0)
-
-        #     #     person_settings.facecolor = person_settings.facecolor.apply(lambda x: next(color))
-        #     #     person_settings.edgecolor = person_settings.facecolor
-
-        #     #     person_settings.loc[(person_settings['name'].isin(ons)), 'facecolor'] = 'grey'
-        #     #     person_settings.loc[(person_settings['name'].isin(ons)), 'edgecolor'] = 'grey'
-        
-        #     # st.session_state.person_settings = person_settings
-        # else:
-        #     person_settings = st.session_state.person_settings
-        #     person_settings = person_settings[person_settings.name.isin(filtered_df.name.unique())]
-
-            
-        calculate_people_summary()
+        if 'people_settings' not in st.session_state:
+            calculate_people_summary()
 
         people_settings_column_config = {
             "name": st.column_config.TextColumn(label="Name", disabled = True),
-            "offset": st.column_config.NumberColumn(label="Offset", help="Leave empty to use a random value.", step=1),
-            "facecolor": st.column_config.TextColumn(label="Color", help="Leave empty to pick automatically.")
+            "offset": st.column_config.NumberColumn(label="Offset", help="You can edit this.", step=1),
+            "facecolor": st.column_config.TextColumn(label="Color", help="You can edit this.")
         }
 
         st.session_state['people_settings'] = st.data_editor(
