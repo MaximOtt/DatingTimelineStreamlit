@@ -9,14 +9,17 @@ import seaborn as sns
 import datetime as dt # Obviously for time data
 from itertools import cycle
 # from dodger import calculate_offsets
-from utils import apply_filter, calculate_offsets, calculate_people_summary
+from utils import *
 import zipfile
 
 if 'app_run_counter' not in st.session_state:
     st.session_state['app_run_counter'] = 1
+    print('')
+    print('#### PAGE REFRESH ####')
 else:
     st.session_state['app_run_counter'] += 1
-print('#########################################################################')
+
+print('')
 print('### App Run Counter:', st.session_state['app_run_counter'])
 ######################################
 ### Prepare some things in advance ###
@@ -36,8 +39,8 @@ if 'global_settings' not in st.session_state:
 # Read symbol images
 symbols = {image_file: plt.imread(image_file) for image_file in glob.glob('symbols/*.png')}
 symbol_boxes = {key: OffsetImage(image, zoom=0.02) for key, image in symbols.items()}
-symbol_keys = [key for key, image in symbols.items()]
-symbol_key = cycle(symbol_keys)
+st.session_state['symbol_key_list'] = [key for key, image in symbols.items()]
+# symbol_key = cycle(symbol_keys)
 
 # Set color cycles
 st.session_state['bg_colors'] = [
@@ -59,7 +62,7 @@ st.session_state['color_list'] = [
     'xkcd:olive', 'xkcd:forest green', 'xkcd:periwinkle', 'xkcd:lime', 'xkcd:lilac', # 25
     'xkcd:royal purple', 'xkcd:light orange', 'xkcd:cerulean', 'xkcd:kelly green', 'xkcd:puke green', # 30
 ]
-color = cycle(st.session_state['color_list'])
+# color = cycle(st.session_state['color_list'])
 
 with st.sidebar:
     st.title("Your Dating Timeline")
@@ -151,7 +154,6 @@ with tab2:
     ###############
     # When the page is rendered for the first time, we want to show example data and obviously not delete anything
     if 'reinitialize' not in st.session_state:
-        print('reinitialize was not in state')
         st.session_state["reinitialize"] = True
     
 
@@ -170,27 +172,27 @@ with tab2:
     
     if st.session_state['reinitialize']:
         if button_a:
-            st.session_state['people'] =        pd.read_csv("maxim_people.csv")
-            st.session_state['specials'] =      pd.read_csv("maxim_specials.csv")
-            st.session_state['circumstances'] = pd.read_csv("maxim_circumstances.csv")
+            st.session_state['people'] =        pd.read_csv("eg_people.csv")
+            st.session_state['specials'] =      pd.read_csv("eg_specials.csv")
+            st.session_state['circumstances'] = pd.read_csv("eg_circumstances.csv")
         elif button_b:
-            st.session_state['people'] =        pd.read_csv("maxim_people.csv", nrows=0)
-            st.session_state['specials'] =      pd.read_csv("maxim_specials.csv", nrows=0)
-            st.session_state['circumstances'] = pd.read_csv("maxim_circumstances.csv", nrows=0)
+            st.session_state['people'] =        pd.read_csv("eg_people.csv", nrows=0)
+            st.session_state['specials'] =      pd.read_csv("eg_specials.csv", nrows=0)
+            st.session_state['circumstances'] = pd.read_csv("eg_circumstances.csv", nrows=0)
         elif uploaded_people is not None:
             st.session_state['people'] = uploaded_people_df
             if uploaded_specials is not None:
                 st.session_state['specials'] = uploaded_specials_df
             else:
-                st.session_state['specials'] = pd.read_csv("maxim_specials.csv", nrows=0)
+                st.session_state['specials'] = pd.read_csv("eg_specials.csv", nrows=0)
             if uploaded_circumstances is not None:
                 st.session_state['circumstances'] = uploaded_circumstances_df
             else:
-                st.session_state['circumstances'] = pd.read_csv("maxim_circumstances.csv", nrows=0)
+                st.session_state['circumstances'] = pd.read_csv("eg_circumstances.csv", nrows=0)
         else:
-            st.session_state['people'] =        pd.read_csv("maxim_people.csv")
-            st.session_state['specials'] =      pd.read_csv("maxim_specials.csv")
-            st.session_state['circumstances'] = pd.read_csv("maxim_circumstances.csv")
+            st.session_state['people'] =        pd.read_csv("eg_people.csv")
+            st.session_state['specials'] =      pd.read_csv("eg_specials.csv")
+            st.session_state['circumstances'] = pd.read_csv("eg_circumstances.csv")
         
         st.session_state['people'].start = pd.to_datetime(st.session_state['people'].start)
         st.session_state['people'].end   = pd.to_datetime(st.session_state['people'].end)    
@@ -201,16 +203,10 @@ with tab2:
         st.session_state['specials'].start = pd.to_datetime(st.session_state['specials'].start)
         st.session_state['circumstances'].start = pd.to_datetime(st.session_state['circumstances'].start)
         st.session_state['circumstances'].end   = pd.to_datetime(st.session_state['circumstances'].end)
-        # st.session_state['people']       = people
-        # st.session_state['specials']     = specials
-        # st.session_state['circumstances'] = circumstances
+
         st.session_state['reinitialize'] = False
         button_a = False
         button_b = False
-    # else:
-    #     people          = st.session_state['people']
-    #     specials        = st.session_state['specials']
-    #     circumstances   = st.session_state['circumstances']
 
 
 with tab4:
@@ -285,6 +281,7 @@ with tab2:
             max_value=dt.date(2030, 1, 1),
             format="DD.MM.YYYY",
             step=1,
+            required=True
         ),
         "end": st.column_config.DateColumn(
             "To",
@@ -299,9 +296,17 @@ with tab2:
     }
     st.session_state['people'] = st.data_editor(
         st.session_state['people'], column_config=people_column_config_dict,
-        on_change=calculate_people_summary,
+        on_change=calculate_people_summary, 
         use_container_width=True, num_rows='dynamic'
     )
+    
+    if 'people_settings' not in st.session_state:
+        calculate_people_summary()
+    
+    if set(st.session_state['people'].name) != set(st.session_state['people_settings'].name):
+        print('Triggered rerun')
+        calculate_people_summary()
+        st.rerun()
 
     st.markdown('#### Special activities')
     specials_column_config = {
@@ -321,6 +326,14 @@ with tab2:
         'participants': st.column_config.TextColumn(label="Participants", help="Participants separated by semicolons. Some fancy plotting options based on this might get added later.", required=False),
     }
     st.session_state['specials'] = st.data_editor(st.session_state['specials'], use_container_width=True, column_config=specials_column_config, num_rows='dynamic')
+
+    if 'specials_summary' not in st.session_state:
+        calculate_specials_summary()
+    
+    if set(st.session_state['specials'].kind) != set(st.session_state['specials_summary'].kind):
+        print('Triggered rerun')
+        calculate_specials_summary()
+        st.rerun()
 
     st.markdown('#### Circumstances')
     circumstances_column_config = {
@@ -350,6 +363,13 @@ with tab2:
     }
     st.session_state['circumstances'] = st.data_editor(st.session_state['circumstances'], use_container_width=True, column_config=circumstances_column_config, num_rows='dynamic')
 
+    if 'circumstances_summary' not in st.session_state:
+        calculate_circumstances_summary()
+    
+    if set(st.session_state['circumstances'].situation) != set(st.session_state['circumstances_summary'].situation):
+        print('Triggered rerun')
+        calculate_circumstances_summary()
+        st.rerun()
 
 with tab4:
     with st.expander("Some or all entries for these people will not be shown"):
@@ -373,15 +393,12 @@ with tab4:
             """
         )
 
-        if 'people_settings' not in st.session_state:
-            calculate_people_summary()
-
         people_settings_column_config = {
             "name": st.column_config.TextColumn(label="Name", disabled = True),
             "offset": st.column_config.NumberColumn(label="Offset", help="You can edit this.", step=1),
             "facecolor": st.column_config.TextColumn(label="Color", help="You can edit this.")
         }
-
+        
         st.session_state['people_settings'] = st.data_editor(
             st.session_state['people_settings'], use_container_width=True,
             column_config = people_settings_column_config,
@@ -400,32 +417,15 @@ with tab4:
             """
         )
 
-    
-        if 'specials_summary' not in st.session_state:
-            specials_summary = st.session_state['specials'].groupby('kind').size().reset_index(name='count').sort_values(by=['count', 'kind'], ascending = False).reset_index(drop=True)
-            
-            specials_summary['symbol_key'] = ""
-            # specials_summary['symbol_url'] = ""
-
-            specials_summary.symbol_key = specials_summary.symbol_key.apply(lambda x: next(symbol_key))
-            # specials_summary.symbol_url = specials_summary.symbol_key.apply(lambda x: x)
-            specials_summary.edgecolor = "None"
-
-            # Check for known participants
-
-            st.session_state.specials_summary = specials_summary
-        else:
-            specials_summary = st.session_state.specials_summary
-
         specials_summary_settings_column_config = {
             "kind": st.column_config.TextColumn(label="Kind", help="Self-defined kind of special activity", disabled = True),
             "count": st.column_config.NumberColumn(label="Count", help="How many special activities of this (self-defined) kind you tracked.", disabled = True),
-            "symbol_key": st.column_config.SelectboxColumn(label="Symbol Key", help="Pick a symbol to represent this.", options=symbol_keys),
+            "symbol_key": st.column_config.SelectboxColumn(label="Symbol Key", help="Pick a symbol to represent this.", options=st.session_state['symbol_key_list']),
             # "symbol_url": st.column_config.TextColumn(label="Symbol", width="small")
         }
 
-        specials_summary = st.data_editor(
-            specials_summary, use_container_width=True, 
+        st.session_state['specials_summary'] = st.data_editor(
+            st.session_state['specials_summary'], use_container_width=True, 
             column_config=specials_summary_settings_column_config,
             hide_index = False)
     
@@ -458,15 +458,9 @@ with tab4:
         )
 
         if 'circumstances_summary' not in st.session_state:
-            circumstances_summary = st.session_state['circumstances'].groupby('situation').size().reset_index(name='count').reset_index(drop=True)
-            
-            circumstances_summary['color'] = ""
-
-            circumstances_summary.color = circumstances_summary.color.apply(lambda x: next(bg_color))
-
-            st.session_state.circumstances_summary = circumstances_summary
-        else:
-            circumstances_summary = st.session_state.circumstances_summary
+            calculate_circumstances_summary()
+        
+        
 
         circumstances_summary_column_config = {
             "situation": st.column_config.TextColumn(label="Situation", disabled = True),
@@ -474,8 +468,8 @@ with tab4:
             "color": st.column_config.TextColumn(label="Color", help="You can change the color to any named matplotlib color or use the hex code."),
         }
 
-        circumstances_summary = st.data_editor(
-            circumstances_summary, use_container_width=True, 
+        st.session_state['circumstances_summary'] = st.data_editor(
+            st.session_state['circumstances_summary'], use_container_width=True, 
             column_config=circumstances_summary_column_config,
             hide_index = False)
 
@@ -547,14 +541,14 @@ with tab1:
     
     ### Specials
     # Merge symbols and alocate columns
-    specials_plot_df = st.session_state['specials'].merge(specials_summary, on = "kind", how = "left")
+    specials_plot_df = st.session_state['specials'].merge(st.session_state['specials_summary'], on = "kind", how = "left")
     specials_plot_df = specials_plot_df.merge(specials_offset[['special', 'offset']], on = "special", how = "left")
     specials_plot_df['facecolor'] = 'grey'
     specials_plot_df['edgecolor'] = specials_plot_df.facecolor
     specials_plot_df['size'] = 9
 
     # Circumstances
-    circumstances_plot_df = st.session_state['circumstances'].merge(circumstances_summary, on = "situation", how = "left")
+    circumstances_plot_df = st.session_state['circumstances'].merge(st.session_state['circumstances_summary'], on = "situation", how = "left")
 
     #########################
     ### Plotting the data ###

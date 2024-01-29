@@ -1,0 +1,41 @@
+name,kind,stage,start,end
+Freundin 1,Longterm,FWB,2010-04-01,2010-07-03
+Freundin 1,Longterm,Relationship,2010-07-03,2013-07-19
+Freundin 2,Longterm,FWB,2014-06-05,2014-07-19
+Freundin 2,Longterm,FWB,2014-10-03,2014-11-02
+Freundin 2,Longterm,Complicated,2014-11-15,2015-04-05
+Freundin 2,Longterm,Relationship,2015-04-06,2016-12-31
+Name 1,Date,Sex,2010-05-26,
+Name 2,Date,No action,2010-06-15,
+Name 3,Date,Sex,2010-09-30,
+Name 4,Date,Sex,2010-11-27,
+Name 5,Date,Sex,2011-11-29,
+Name 6,Date,Kiss,2011-10-03,
+Name 7,Date,Kiss,2011-12-13,
+Name 8,Date,No action,2012-06-29,
+Name 9,Date,Sex,2013-03-18,
+Name 10,Date,No action,2013-10-19,
+Name 11,Date,Kiss,2013-10-31,
+Name 12,Date,No action,2014-01-25,
+Name 13,Date,Sex,2014-03-18,
+Name 14,Date,Sex,2014-05-16,
+Name 16,Date,Kiss,2015-04-09,
+Name 16,Date,Sex,2011-07-14,
+FWB 1,Longterm,FWB,2010-04-19,2010-06-12
+FWB 1,Longterm,Relationship,2010-06-13,2010-08-21
+FWB 2,Longterm,FWB,2011-03-01,2011-06-30
+FWB 3,Longterm,FWB,2011-05-24,2011-06-30
+Dora,Date,Sex,2010-11-05,
+Dora,Date,Sex,2010-12-04,
+Charlie,Date,No action,2015-04-29,
+Charlie,Date,Kiss,2015-06-21,
+Bob,Date,Kiss,2011-04-27,
+Bob,Date,Sex,2011-05-07,
+Bob,Date,Sex,2012-06-22,
+FWB 4,Date,Kiss,2013-02-07,
+FWB 4,Date,Sex,2013-04-26,
+FWB 4,Longterm,FWB,2013-10-22,2014-07-19
+FWB 4,Longterm,FWB,2014-09-01,2014-10-31
+FWB 5,Longterm,FWB,2014-01-19,2014-05-19
+Alice,Date,Sex,2014-01-24,
+Alice,Date,Sex,2014-01-26,

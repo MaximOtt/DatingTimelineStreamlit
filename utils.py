@@ -4,6 +4,7 @@ from itertools import cycle
 
 
 def apply_filter():
+    print('Executing apply_filter()')
     if st.session_state['filter_choice'] == "All":
         st.session_state['filtered_people'] = st.session_state['people']
         st.session_state['removed_people'] = [] 
@@ -22,6 +23,7 @@ def apply_filter():
 
 
 def calculate_people_summary():
+    print('Executing calculate_people_summary()')
     st.session_state['people_to_color'] = list(
         st.session_state['filtered_people'][st.session_state['filtered_people'].kind == "Longterm"].name.unique()
     )
@@ -32,6 +34,8 @@ def calculate_people_summary():
 
     st.session_state['people_settings'] = pd.DataFrame(columns=['name','facecolor', 'edgecolor'])
     st.session_state['people_settings'].name = list(set(st.session_state['people_to_color']) | st.session_state['ons'])
+        
+    st.session_state['people_settings'].name  = st.session_state['people_settings'].name.astype(str)
 
     color = cycle(st.session_state['color_list'])
     if len(st.session_state['people_settings']) >0:
@@ -49,7 +53,28 @@ def calculate_people_summary():
         st.session_state['people_settings'].loc[(st.session_state['people_settings']['name'].isin(st.session_state['ons'])), 'facecolor'] = 'grey'
         st.session_state['people_settings'].loc[(st.session_state['people_settings']['name'].isin(st.session_state['ons'])), 'edgecolor'] = 'grey'
 
+def calculate_specials_summary():
+    print('Executing calculate_specials_summary()')
+    specials_summary = st.session_state['specials'].groupby('kind').size().reset_index(name='count').sort_values(by=['count', 'kind'], ascending = False).reset_index(drop=True)
 
+    specials_summary['symbol_key'] = ""
+    # specials_summary['symbol_url'] = ""
+
+    symbol_key = cycle(st.session_state['symbol_key_list'])
+    specials_summary.symbol_key = specials_summary.symbol_key.apply(lambda x: next(symbol_key))
+    # specials_summary.symbol_url = specials_summary.symbol_key.apply(lambda x: x)
+    specials_summary.edgecolor = "None"
+
+    # Check for known participants
+    st.session_state['specials_summary'] = specials_summary
+
+def calculate_circumstances_summary():
+    circumstances_summary = st.session_state['circumstances'].groupby('situation').size().reset_index(name='count').reset_index(drop=True)
+    circumstances_summary['color'] = ""
+    bg_color = cycle(st.session_state['bg_colors'])
+    circumstances_summary.color = circumstances_summary.color.apply(lambda x: next(bg_color))
+
+    st.session_state['circumstances_summary'] = circumstances_summary
 
 def calculate_offsets(df):
     # Split the df to plot by the number of known participants and treat the cases separately
@@ -81,7 +106,7 @@ def calculate_offsets(df):
     # specials_with_multiple['name'] = specials_with_multiple.known_participant_list
     # st.write(specials_with_multiple)
 
-    print('Running calculate_offsets()')
+    print('Executing calculate_offsets()')
     closeness_limit = st.session_state['global_settings']['dodge_dates_days']
 
     # Check relationships first
