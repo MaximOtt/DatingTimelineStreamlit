@@ -4,12 +4,13 @@ import pandas as pd
 import matplotlib.pyplot as plt # Plotting
 import matplotlib.patches as patches # Background
 import matplotlib.patheffects as pe
-from matplotlib.offsetbox import OffsetImage, AnnotationBbox
-from matplotlib.font_manager import FontProperties
+import matplotlib.offsetbox as ob
+import matplotlib.font_manager as fp
+# from matplotlib.offsetbox import OffsetImage, AnnotationBbox
+# from matplotlib.font_manager import FontProperties
 import seaborn as sns
 import datetime as dt # Obviously for time data
 from itertools import cycle
-# from dodger import calculate_offsets
 from utils import *
 import zipfile
 
@@ -39,7 +40,7 @@ if 'global_settings' not in st.session_state:
 
 # Read symbol images
 symbols = {image_file: plt.imread(image_file) for image_file in glob.glob('symbols/*.png')}
-symbol_boxes = {key: OffsetImage(image, zoom=0.02) for key, image in symbols.items()}
+symbol_boxes = {key: ob.OffsetImage(image, zoom=0.02) for key, image in symbols.items()}
 st.session_state['symbol_key_list'] = [key for key, image in symbols.items()]
 # symbol_key = cycle(symbol_keys)
 
@@ -722,7 +723,7 @@ with tab1:
             zorder = -99))
         
     # Add legend annotations
-    font_prop = FontProperties(family='monospace')
+    font_prop = fp.FontProperties(family='monospace')
     ax.annotate('',
             xy=(1, max_year+0.8), xycoords='data',
             xytext=(364, max_year+0.8), textcoords='data',
