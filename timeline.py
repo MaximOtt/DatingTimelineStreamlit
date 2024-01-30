@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt # Plotting
 import matplotlib.patches as patches # Background
 import matplotlib.patheffects as pe
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
+from matplotlib.font_manager import FontProperties
 import seaborn as sns
 import datetime as dt # Obviously for time data
 from itertools import cycle
@@ -114,7 +115,7 @@ with st.expander("Upload everything at once"):
         uploaded_circumstances_df = None
 
 
-tab1, tab2, tab3, tab4 = st.tabs(["Timeline", "Data", "Settings", "Customize"])
+tab1, tab2, tab3, tab4 = st.tabs(["Timeline", "Data", "Customize", "Settings"])
 
 # tab1: Timeline
 # tab2: Data Upload/Input/Edit/View
@@ -124,7 +125,7 @@ tab1, tab2, tab3, tab4 = st.tabs(["Timeline", "Data", "Settings", "Customize"])
 ############################
 ### General Settings Tab ###
 ############################
-with tab3:
+with tab4:
     "Here you can customize the general appearance of the graph."
     for key, value in st.session_state['global_settings'].items():
         if isinstance(st.session_state['global_settings'][key],int):
@@ -209,7 +210,7 @@ with tab2:
         button_b = False
 
 
-with tab4:
+with tab3:
     "Here you can customize how each person is shown."
 
     ##################
@@ -371,7 +372,7 @@ with tab2:
         calculate_circumstances_summary()
         st.rerun()
 
-with tab4:
+with tab3:
     with st.expander("Some or all entries for these people will not be shown"):
         if len(st.session_state['removed_people'])==0:
             st.write('No one here')
@@ -494,7 +495,13 @@ with tab1:
     right = 365
 
     # Create figure
-    fig, ax = plt.subplots(figsize=(12, 15))
+    fig, ax = plt.subplots(
+        # 2,1, sharex=True, sharey=False, 
+        # height_ratios=[max_year-min_year,2], 
+        figsize=(10,15)
+    )
+    plt.subplots_adjust(hspace=0.0)
+
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
     ax.spines['bottom'].set_visible(False)
@@ -502,14 +509,17 @@ with tab1:
     ax.grid(False)
 
     # Set limits
-    plt.xlim([-5, 370])
-    plt.ylim([min_year-0.5, max_year+0.5])
+    ax.set_xlim([-5, 370])
+    ax.set_ylim([min_year-0.5, max_year+0.5])
 
     # Set year ticks (labels are fine automatically)
-    plt.yticks(range(min_year,max_year+1), fontsize = st.session_state['global_settings']["year_font_size"], color = 'white')
+    # plt.yticks(range(min_year,max_year+1), fontsize = st.session_state['global_settings']["year_font_size"], color = 'white')
+    ax.set_yticks(range(min_year, max_year+1))
+    ax.set_yticklabels(range(min_year, max_year+1), fontsize=st.session_state['global_settings']["year_font_size"], color='white')
+
     # Set month ticks and labels
     first_of_month = [dt.datetime(1,n,1).timetuple().tm_yday for n in range(1,13)]
-    plt.xticks(first_of_month + [365],) # Set tick locations at the first of each month and end of year (ignoring leap years)
+    ax.set_xticks(first_of_month + [365],) # Set tick locations at the first of each month and end of year (ignoring leap years)
     ax.set_xticklabels('') # Hide automatic (number of day in the year) labels
     middle_of_month = [day + 15 for day in first_of_month] # Good enough
     ax.set_xticks(middle_of_month, minor=True) # Set minor ticks locations between the month 
@@ -698,7 +708,7 @@ with tab1:
             else:
                 ax.add_patch(patches.Rectangle(
                     (1,year-0.45),
-                    365,bg_width,
+                    364,bg_width,
                     edgecolor='None',facecolor=row.color,
                     zorder = -9))
 
@@ -711,8 +721,77 @@ with tab1:
             edgecolor='None',facecolor='white' if year % 2 == 0 else 'white',
             zorder = -99))
         
+    # Add legend annotations
+    font_prop = FontProperties(family='monospace')
+    ax.annotate('',
+            xy=(1, max_year+0.8), xycoords='data',
+            xytext=(364, max_year+0.8), textcoords='data',
+            arrowprops=dict(facecolor='white', lw=1, arrowstyle='-'),
+            horizontalalignment='center', verticalalignment='center', 
+            annotation_clip=False)
+    ax.annotate((
+            'What the symbols mean'
+        ),
+        xy=(1, max_year+0.9), xycoords='data', 
+        xytext=(0,-1), textcoords='offset fontsize',
+        fontproperties=font_prop,
+        annotation_clip=False, 
+        color = 'white',
+        size=16)
+    ax.annotate((
+              '       |  Thick solid:  Relationship'+
+            '\nLines  |  Thin solid:   It\'s complicated'+
+            '\n       |  Dotted:       Friends with benefits'
+        ), 
+        fontproperties=font_prop,
+        xy=(1, max_year+0.9), xycoords='data', 
+        xytext=(0,-5.5), textcoords='offset fontsize',
+        annotation_clip=False, 
+        color = 'white',
+        size = 13)
+    ax.annotate((
+              '       |  Small dot:      Date with no \'action\''+
+            '\nPoints |  Empty circle:   There was a kiss'+
+            '\n       |  Filled circle:  You had sex'
+        ), 
+        fontproperties=font_prop,
+        xy=(1, max_year+0.9), xycoords='data', 
+        xytext=(0,-9.5), textcoords='offset fontsize',
+        annotation_clip=False, 
+        color = 'white',
+        size = 13)
+    ax.annotate((
+              'Everyone who appears more than once gets a color.\nOne-time meetings are grey.'
+        ), 
+        fontproperties=font_prop,
+        xy=(1, max_year+0.9), xycoords='data', 
+        xytext=(0,-12.5), textcoords='offset fontsize',
+        annotation_clip=False, 
+        color = 'white',
+        size = 13)
+    ax.annotate((
+              'Emojis represent special activities like, e.g., threesomes.'
+        ), 
+        fontproperties=font_prop,
+        xy=(1, max_year+0.9), xycoords='data', 
+        xytext=(0,-14), textcoords='offset fontsize',
+        annotation_clip=False, 
+        color = 'white',
+        size = 13)
+    ax.annotate((
+              'Colored background denotes a special situation, e.g., living abroad.'
+        ), 
+        fontproperties=font_prop,
+        xy=(1, max_year+0.9), xycoords='data', 
+        xytext=(0,-15.5), textcoords='offset fontsize',
+        annotation_clip=False, 
+        color = 'white',
+        size = 13)
+    
+    # Show and save figure
     st.pyplot(fig)
     plt.savefig("mydatingtimeline.svg")
+    plt.savefig("mydatingtimeline.jpeg")
 
 
 with st.expander("Download everything"): 
@@ -730,6 +809,13 @@ with st.expander("Download everything"):
                 data=file,
                 file_name="mydatingtimeline.svg",
                 mime="image/svg"
+            )
+    with open("mydatingtimeline.jpeg", "rb") as file:
+        btn = st.download_button(
+                label="Download as JPEG",
+                data=file,
+                file_name="mydatingtimeline.jpeg",
+                mime="image/jpeg"
             )
     with open("mydatingtimeline.zip", "rb") as file:
         btn = st.download_button(
