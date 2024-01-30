@@ -4,10 +4,8 @@ import pandas as pd
 import matplotlib.pyplot as plt # Plotting
 import matplotlib.patches as patches # Background
 import matplotlib.patheffects as pe
-import matplotlib.offsetbox as ob
-import matplotlib.font_manager as fp
-# from matplotlib.offsetbox import OffsetImage, AnnotationBbox
-# from matplotlib.font_manager import FontProperties
+from matplotlib.offsetbox import OffsetImage, AnnotationBbox
+from matplotlib.font_manager import FontProperties
 import seaborn as sns
 import datetime as dt # Obviously for time data
 from itertools import cycle
@@ -40,7 +38,7 @@ if 'global_settings' not in st.session_state:
 
 # Read symbol images
 symbols = {image_file: plt.imread(image_file) for image_file in glob.glob('symbols/*.png')}
-symbol_boxes = {key: ob.OffsetImage(image, zoom=0.02) for key, image in symbols.items()}
+symbol_boxes = {key: OffsetImage(image, zoom=0.02) for key, image in symbols.items()}
 st.session_state['symbol_key_list'] = [key for key, image in symbols.items()]
 # symbol_key = cycle(symbol_keys)
 
@@ -723,7 +721,7 @@ with tab1:
             zorder = -99))
         
     # Add legend annotations
-    font_prop = fp.FontProperties(family='monospace')
+    font_prop = FontProperties(family='monospace')
     ax.annotate('',
             xy=(1, max_year+0.8), xycoords='data',
             xytext=(364, max_year+0.8), textcoords='data',
@@ -796,6 +794,7 @@ with tab1:
 
 
 with st.expander("Download everything"): 
+    
     with zipfile.ZipFile("mydatingtimeline.zip", "w") as zf:
         with zf.open(f"people.csv", "w") as buffer:
             people_plot_df.to_csv(buffer,index=False)
@@ -804,24 +803,32 @@ with st.expander("Download everything"):
         with zf.open(f"circumstances.csv", "w") as buffer:
             circumstances_plot_df.to_csv(buffer, index=False)
 
-    with open("mydatingtimeline.svg", "rb") as file:
-        btn = st.download_button(
-                label="Download as SVG",
-                data=file,
-                file_name="mydatingtimeline.svg",
-                mime="image/svg"
-            )
-    with open("mydatingtimeline.jpeg", "rb") as file:
-        btn = st.download_button(
-                label="Download as JPEG",
-                data=file,
-                file_name="mydatingtimeline.jpeg",
-                mime="image/jpeg"
-            )
+
+    dcol1, dcol2 = st.columns(2)
+    with dcol1:
+        with open("mydatingtimeline.svg", "rb") as file:
+            btn = st.download_button(
+                    label="Download as SVG",
+                    data=file,
+                    file_name="mydatingtimeline.svg",
+                    mime="image/svg",
+                    use_container_width=True
+                )
+    with dcol2:
+        with open("mydatingtimeline.jpeg", "rb") as file:
+            btn = st.download_button(
+                    label="Download as JPEG",
+                    data=file,
+                    file_name="mydatingtimeline.jpeg",
+                    mime="image/jpeg",
+                    use_container_width=True
+                )
+            
     with open("mydatingtimeline.zip", "rb") as file:
         btn = st.download_button(
                 label="Download all data as ZIP",
                 data=file,
                 file_name="mydatingtimeline.zip",
-                mime="image/svg"
+                mime="image/svg",
+                use_container_width=True
             )
