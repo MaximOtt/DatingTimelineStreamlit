@@ -20,8 +20,6 @@ def apply_filter():
         ].name.unique())
 
 
-
-
 def calculate_people_summary():
     print('Executing calculate_people_summary()')
     st.session_state['people_to_color'] = list(
@@ -65,8 +63,9 @@ def calculate_specials_summary():
     # specials_summary.symbol_url = specials_summary.symbol_key.apply(lambda x: x)
     specials_summary.edgecolor = "None"
 
-    # Check for known participants
     st.session_state['specials_summary'] = specials_summary
+    
+    # Check for known participants
 
 def calculate_circumstances_summary():
     circumstances_summary = st.session_state['circumstances'].groupby('situation').size().reset_index(name='count').reset_index(drop=True)

@@ -297,7 +297,7 @@ with tab2:
     st.session_state['people'] = st.data_editor(
         st.session_state['people'], column_config=people_column_config_dict,
         on_change=calculate_people_summary, 
-        use_container_width=True, num_rows='dynamic'
+        use_container_width=True, num_rows='dynamic', hide_index=True
     )
     
     if 'people_settings' not in st.session_state:
@@ -325,7 +325,10 @@ with tab2:
         ),
         'participants': st.column_config.TextColumn(label="Participants", help="Participants separated by semicolons. Some fancy plotting options based on this might get added later.", required=False),
     }
-    st.session_state['specials'] = st.data_editor(st.session_state['specials'], use_container_width=True, column_config=specials_column_config, num_rows='dynamic')
+    st.session_state['specials'] = st.data_editor(
+        st.session_state['specials'], column_config=specials_column_config,
+        on_change=calculate_specials_summary,
+        use_container_width=True, num_rows='dynamic', hide_index=True)
 
     if 'specials_summary' not in st.session_state:
         calculate_specials_summary()
@@ -361,7 +364,10 @@ with tab2:
             required=True
         ),
     }
-    st.session_state['circumstances'] = st.data_editor(st.session_state['circumstances'], use_container_width=True, column_config=circumstances_column_config, num_rows='dynamic')
+    st.session_state['circumstances'] = st.data_editor(
+        st.session_state['circumstances'], column_config=circumstances_column_config,
+        on_change=calculate_circumstances_summary,
+        use_container_width=True,  num_rows='dynamic')
 
     if 'circumstances_summary' not in st.session_state:
         calculate_circumstances_summary()
@@ -429,23 +435,23 @@ with tab3:
             column_config=specials_summary_settings_column_config,
             hide_index = False)
     
-        if 'specials_offset' not in st.session_state:
-            specials_offset = st.session_state['specials'][['special','kind','start','participants']]
+        # if 'specials_offset' not in st.session_state:
+        #     specials_offset = st.session_state['specials'][['special','kind','start','participants']]
             
-            specials_offset['offset'] = 0
-            # specials_summary['symbol_url'] = ""
+        #     specials_offset['offset'] = 0
+        #     # specials_summary['symbol_url'] = ""
 
-            st.session_state.specials_offset = specials_offset
-        else:
-            specials_offset = st.session_state.specials_offset
+        #     st.session_state.specials_offset = specials_offset
+        # else:
+        #     specials_offset = st.session_state.specials_offset
 
-        specials_offset_settings_column_config = specials_column_config
-        specials_offset_settings_column_config['offset'] = st.column_config.NumberColumn(label="Offset", help="Modify if needed.", step = 1)
+        # specials_offset_settings_column_config = specials_column_config
+        # specials_offset_settings_column_config['offset'] = st.column_config.NumberColumn(label="Offset", help="Modify if needed.", step = 1)
 
-        specials_offset = st.data_editor(
-            specials_offset, use_container_width=True, 
-            column_config=specials_offset_settings_column_config,
-            hide_index = False)
+        # specials_offset = st.data_editor(
+        #     specials_offset, use_container_width=True, 
+        #     column_config=specials_offset_settings_column_config,
+        #     hide_index = False)
 
     ##############################
     ### Circumstances Settings ###
@@ -551,7 +557,7 @@ with tab1:
     ### Specials
     # Merge symbols and alocate columns
     specials_plot_df = st.session_state['specials'].merge(st.session_state['specials_summary'], on = "kind", how = "left")
-    specials_plot_df = specials_plot_df.merge(specials_offset[['special', 'offset']], on = "special", how = "left")
+    # specials_plot_df = specials_plot_df.merge(specials_offset[['special', 'offset']], on = "special", how = "left")
     specials_plot_df['facecolor'] = 'grey'
     specials_plot_df['edgecolor'] = specials_plot_df.facecolor
     specials_plot_df['size'] = 9
