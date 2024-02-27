@@ -820,14 +820,22 @@ with tab1:
 
 
 with st.expander("Download everything"): 
+
+    st.write('Note: The customization and other settings are currently not saved.')
     
     with zipfile.ZipFile("mydatingtimeline.zip", "w") as zf:
         with zf.open(f"people.csv", "w") as buffer:
-            people_plot_df.to_csv(buffer,index=False)
+            people_plot_df[[
+                'name','kind','stage','start','end'
+            ]].to_csv(buffer,index=False)
         with zf.open(f"specials.csv", "w") as buffer:
-            specials_plot_df.to_csv(buffer,index=False)
+            specials_plot_df[[
+                'special','kind','start','participants','comment'
+            ]].to_csv(buffer,index=False)
         with zf.open(f"circumstances.csv", "w") as buffer:
-            circumstances_plot_df.to_csv(buffer, index=False)
+            circumstances_plot_df[[
+                'situation','start','end','comment'
+            ]].to_csv(buffer, index=False)
 
 
     dcol1, dcol2 = st.columns(2)
