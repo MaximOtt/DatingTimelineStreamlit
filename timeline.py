@@ -510,8 +510,16 @@ with tab1:
     sns.set_theme(style="darkgrid", rc={'axes.facecolor':'#171717', 'figure.facecolor':'#171717'})
 
     # Find or set extreme values
-    min_year = st.session_state['filtered_people'].start.min().year
-    max_year = max(st.session_state['filtered_people'].start.max(),st.session_state['filtered_people'].end.max()).year
+    min_year = min(
+        st.session_state['filtered_people'].start.min().year,
+        st.session_state['specials'].start.min().year,
+        st.session_state['circumstances'].start.min().year,
+    )
+    max_year = max(
+        max(st.session_state['filtered_people'].start.max(),st.session_state['filtered_people'].end.max()).year,
+        st.session_state['specials'].start.max().year,
+        st.session_state['circumstances'].end.max().year,
+    )
     if pd.isna(min_year):
         min_year=2000
         max_year=2001
