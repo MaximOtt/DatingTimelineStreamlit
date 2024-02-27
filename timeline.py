@@ -112,6 +112,11 @@ with st.expander("Upload everything at once"):
         st.write(uploaded_circumstances_df)
     else:
         uploaded_circumstances_df = None
+    
+    # button_use_uploaded_data = st.button('Use uploaded data', use_container_width=True)
+    # if button_use_uploaded_data:
+    #     st.session_state["button_use_uploaded_data"] = True
+    #     st.session_state["reinitialize"] = False
 
 
 tab1, tab2, tab3, tab4 = st.tabs(["Timeline", "Data", "Customize", "Settings"])
@@ -168,8 +173,7 @@ with tab2:
         st.session_state["reinitialize"] = True
 
     # Dataframe initialization should happen only when certain conditions are met
-    # Otherwise, the data frame should be loaded from sessionstate
-    
+    # Otherwise, the data frame should be loaded from session state
     if st.session_state['reinitialize']:
         if button_a:
             st.session_state['people'] =        pd.read_csv("eg_people.csv")
@@ -207,6 +211,22 @@ with tab2:
         st.session_state['reinitialize'] = False
         button_a = False
         button_b = False
+    else:
+        if uploaded_people is not None:
+            st.session_state['people']        = uploaded_people_df
+            st.session_state['people'].start = pd.to_datetime(st.session_state['people'].start)
+            st.session_state['people'].end   = pd.to_datetime(st.session_state['people'].end)    
+            st.session_state['people'].name  = st.session_state['people'].name.astype(str)
+            st.session_state['people'].kind  = st.session_state['people'].kind.astype(str)
+            st.session_state['people'].start = pd.to_datetime(st.session_state['people'].start)
+            st.session_state['people'].end =   pd.to_datetime(st.session_state['people'].end)
+        if uploaded_specials is not None:
+            st.session_state['specials']      = uploaded_specials_df
+            st.session_state['specials'].start = pd.to_datetime(st.session_state['specials'].start)
+        if uploaded_circumstances is not None:
+            st.session_state['circumstances'] = uploaded_circumstances_df
+            st.session_state['circumstances'].start = pd.to_datetime(st.session_state['circumstances'].start)
+            st.session_state['circumstances'].end   = pd.to_datetime(st.session_state['circumstances'].end)
 
 
 with tab3:
